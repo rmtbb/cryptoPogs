@@ -311,31 +311,72 @@
 
 <body>
   <div id="lobby-overlay"
-    style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:2000; display:flex; justify-content:center; align-items:center; flex-direction:column; color:white;">
-    <h1 style="margin-bottom:20px; color:#10b981;">Crypto Pogs Online</h1>
-    <div style="background:#1a1a2e; padding:30px; border-radius:15px; text-align:center; border: 1px solid #4c1d95;">
-      <input type="text" id="player-name-input" placeholder="Your Name"
-        style="padding:10px; border-radius:5px; border:none; margin-bottom:10px; width:200px; display:block;">
-      <input type="text" id="room-input" placeholder="Room ID (e.g. room1)"
-        style="padding:10px; border-radius:5px; border:none; margin-bottom:10px; width:200px; display:block;">
-      <button id="join-btn"
-        style="padding:10px 20px; background:#6d28d9; color:white; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">Join
-        Game</button>
+    style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:2000; display:flex; justify-content:center; align-items:center; flex-direction:column; color:white; font-family: 'Inter', sans-serif;">
+    <h1 style="margin-bottom:30px; color:#10b981; font-size: 2.5rem; text-shadow: 0 2px 10px rgba(16, 185, 129, 0.3);">
+      Crypto Pogs Online</h1>
+
+    <div
+      style="background:#1a1a2e; padding:40px; border-radius:16px; width: 400px; text-align:center; border: 1px solid #4c1d95; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+
+      <div style="margin-bottom: 20px;">
+        <label style="display:block; text-align:left; color:#a78bfa; margin-bottom: 5px; font-size:0.9rem;">My
+          Name</label>
+        <input type="text" id="player-name-input" placeholder="Enter nickname..."
+          style="width:100%; padding:12px; border-radius:8px; border:2px solid #4c1d95; background: rgba(0,0,0,0.2); color:white; font-size:1rem; outline:none; transition: border-color 0.2s;">
+      </div>
+
+      <!-- Room List Section -->
+      <div id="room-list-section" style="margin-bottom: 25px;">
+        <h3
+          style="color:#10b981; margin-bottom:15px; font-size:1.1rem; text-align:left; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom:10px;">
+          Join an Active Game</h3>
+        <div id="rooms-container"
+          style="display:flex; flex-direction:column; gap:10px; max-height: 200px; overflow-y: auto;">
+          <div style="color:#666; font-style:italic; padding: 10px;">Searching for games...</div>
+        </div>
+      </div>
+
+      <!-- Create/Manual Join Section -->
+      <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
+        <p style="color:#666; font-size: 0.9rem; margin-bottom: 10px;">Or create a new room:</p>
+        <div style="display:flex; gap:10px;">
+          <input type="text" id="room-input" placeholder="Room ID"
+            style="flex:1; padding:10px; border-radius:8px; border:2px solid #4c1d95; background: rgba(0,0,0,0.2); color:white; font-size:0.9rem;">
+          <button id="join-btn"
+            style="padding:10px 20px; background:#6d28d9; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; transition: transform 0.1s;">GO</button>
+        </div>
+      </div>
+
     </div>
-    <div id="room-list" style="margin-top:20px; text-align:center;">
-      <h3 style="color:#10b981; margin-bottom:10px;">Available Rooms:</h3>
-      <div id="rooms-container" style="display:flex; flex-direction:column; gap:5px;"></div>
-    </div>
-    <div id="status-msg" style="margin-top:15px; color:#fba;"></div>
+    <div id="status-msg" style="margin-top:20px; color:#fba; min-height: 20px;"></div>
   </div>
 
   <style>
     .flying-pog {
       position: fixed;
       z-index: 3000;
-      transition: all 0.8s ease-in-out;
+      transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
       pointer-events: none;
-      box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+    }
+
+    .room-btn {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 15px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 8px;
+      color: #e5e7eb;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .room-btn:hover {
+      background: rgba(16, 185, 129, 0.1);
+      border-color: #10b981;
+      transform: translateX(2px);
     }
   </style>
 
@@ -426,17 +467,12 @@
     socket.on('roomList', (rooms) => {
       roomsContainer.innerHTML = '';
       if (rooms.length === 0) {
-        roomsContainer.innerHTML = '<span style="color:#666;">No waiting rooms</span>';
+        roomsContainer.innerHTML = '<div style="color:#666; padding:10px; font-size:0.9rem;">No active games found.<br>Create one below!</div>';
       } else {
         rooms.forEach(r => {
-          const btn = document.createElement('button');
-          btn.textContent = `${r.id} (${r.playerCount}/2)`;
-          btn.style.padding = "5px 10px";
-          btn.style.background = "rgba(255,255,255,0.1)";
-          btn.style.border = "1px solid #10b981";
-          btn.style.color = "white";
-          btn.style.cursor = "pointer";
-          btn.style.borderRadius = "4px";
+          const btn = document.createElement('div');
+          btn.className = 'room-btn';
+          btn.innerHTML = `<span><strong>${r.id}</strong></span> <span style="font-size:0.8rem; background:rgba(255,255,255,0.1); padding:2px 8px; border-radius:12px;">${r.playerCount}/2 Players</span>`;
           btn.onclick = () => {
             roomInput.value = r.id;
             joinBtn.click();
@@ -450,13 +486,21 @@
       const room = roomInput.value.trim();
       const name = nameInput.value.trim() || "Anonymous";
       if (!room) {
-        statusMsg.textContent = "Please enter a Room ID";
+        statusMsg.textContent = "Please enter or select a Room ID";
         return;
       }
       currentRoomId = room;
+      // Save name for convenience?
+      localStorage.setItem('pogPlayerName', name);
+
       socket.emit('joinRoom', room, name);
       statusMsg.textContent = "Joining...";
     });
+
+    // Restore name if exists
+    if (localStorage.getItem('pogPlayerName')) {
+      nameInput.value = localStorage.getItem('pogPlayerName');
+    }
 
     socket.on('errorMsg', (msg) => {
       statusMsg.textContent = msg;
@@ -488,6 +532,11 @@
     });
 
     socket.on('gameStart', (gameState) => {
+      // Clear any end-game screens/buttons immediately
+      resultsEl.style.display = 'none';
+      restartBtn.style.display = 'none';
+      slammerEl.style.display = 'none'; // Hide until state says it's my turn
+
       renderGameState(gameState);
     });
 
@@ -617,8 +666,8 @@
 
     restartBtn.addEventListener('click', () => {
       socket.emit('restartGame', currentRoomId);
-      resultsEl.style.display = 'none';
-      restartBtn.style.display = 'none';
+      // We don't manually hide here anymore, we wait for 'gameStart' event
+      // but we can hide it for instant feedback if we want, but 'gameStart' is safer for sync
     });
 
     // --- Rendering ---
@@ -716,17 +765,36 @@
     }
 
     function showResults(state, winner) {
-      // Simplified results view for now
+      const p1Orig = state.originalPogs.filter(p => p.owner === 1);
+      const p2Orig = state.originalPogs.filter(p => p.owner === 2);
+
+      const p1End = state.p1Collected;
+      const p2End = state.p2Collected;
+
+      const p1Lost = p1Orig.filter(orig => !p1End.find(e => e.id === orig.id));
+      const p1Gained = p1End.filter(endp => !p1Orig.find(o => o.id === endp.id));
+
+      const p2Lost = p2Orig.filter(orig => !p2End.find(e => e.id === orig.id));
+      const p2Gained = p2End.filter(endp => !p2Orig.find(o => o.id === endp.id));
+
       resultsEl.innerHTML = `
-    <h3>Game Over!</h3>
-    <p>Winner: Player ${winner}</p>
-    <p>Player 1 Score: ${state.p1Score}</p>
-    <p>Player 2 Score: ${state.p2Score}</p>
-  `;
+        <h3>Results Summary</h3>
+        <div class="results-section">
+          <h4>${p1NameEl.textContent} Ended With:</h4>
+          <div class="result-pog-list">${p1End.map(r => `<img title="${r.coin.name}" src="${r.coin.image}">`).join('') || '<em>None</em>'}</div>
+        </div>
+        <div class="results-section">
+          <h4>${p2NameEl.textContent} Ended With:</h4>
+          <div class="result-pog-list">${p2End.map(r => `<img title="${r.coin.name}" src="${r.coin.image}">`).join('') || '<em>None</em>'}</div>
+        </div>
+        <div style="margin-top:10px; font-size:0.8em; opacity:0.7;">
+         (Full stats available in console if needed)
+        </div>
+      `;
       resultsEl.style.display = 'block';
     }
-
   </script>
 </body>
 
 </html>
+```
