@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Crypto Pogs Slam</title>
+<style>
+:root {
+  --primary: #6d28d9;
+  --secondary: #4c1d95;
+  --accent: #10b981;
+  --background: #1a1a2e;
+  --text: #e5e7eb;
+  --card-bg: rgba(255, 255, 255, 0.05);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
+  background: var(--background);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.header {
+  background: rgba(26, 26, 46, 0.95);
+  backdrop-filter: blur(8px);
+  width: 100%;
+  padding: 1rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  text-align: center;
+}
+
+.header h1 {
+  font-size: 2rem;
+  margin: 0;
+  color: var(--accent);
+}
+
+.game-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  width: 100%;
+  max-width: 1200px;
+  flex: 1;
+}
+
+.game-row {
+  display: flex;
+  justify-content: space-around;
+  width: 100%;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 2rem;
+}
+
+.stack-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stack-title {
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+  color: var(--accent);
+}
+
+.collected-container {
+  margin-top: 1rem;
+  min-height: 50px;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.stack {
+  position: relative;
+  width: 120px;
+  height: 200px;
+  perspective: 1000px;
+  overflow: visible;
+  border: 2px dashed var(--accent);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.02);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.pog {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  position: absolute;
+  left: calc(50% - 35px);
+  border: 2px solid var(--accent);
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+  cursor: pointer;
+  z-index: 1;
+}
+
+/* Pog faces */
+.pog-face {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  position: absolute; top: 0; left:0;
+}
+
+.pog-front {
+  background: white; /* front side white */
+}
+
+.pog-back {
+  background: linear-gradient(45deg, var(--accent), var(--primary));
+  transform: rotateY(180deg);
+}
+
+.pog.facedown {
+  transform: rotateY(180deg);
+}
+
+/* Initial off-screen position */
+.pog.offscreen {
+  transform: translateX(300px) translateY(-300px) rotate(720deg);
+  opacity: 0;
+}
+
+/* After we trigger the entrance */
+.stack-entrance .pog {
+  transition: transform 1s ease, opacity 1s ease;
+}
+
+/* Final stacked position */
+.pog.final-position {
+  transform: translateX(0) translateY(0) rotate(0deg);
+  opacity: 1;
+}
+
+/* SLAM animation on stack */
+.slam-animation {
+  animation: slam 0.3s ease;
+}
+
+@keyframes slam {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+  100% { transform: translateY(0); }
+}
+
+/* Knockoff animation for collected pogs */
+.pog.knockoff {
+  animation: knockoff 1s ease forwards;
+}
+
+@keyframes knockoff {
+  0% {
+    transform: translateX(0) translateY(0) rotate(0deg);
+    opacity:1;
+  }
+  100% {
+    transform: translateX(calc(-200px + (400px * var(--randX)))) translateY(calc(-100px + (200px * var(--randY)))) rotate(360deg);
+    opacity:0;
+  }
+}
+
+/* Button styles */
+.slam-button {
+  display: inline-block;
+  padding: 1rem 2rem;
+  background: var(--accent);
+  color: white;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.slam-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.player-info {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.7);
+}
+
+@media (max-width: 768px) {
+  .game-row {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .stack {
+    width: 100px;
+    height: 180px;
+  }
+
+  .pog {
+    width: 60px;
+    height: 60px;
+    left: calc(50% - 30px);
+  }
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <h1>Crypto Pogs Slam</h1>
+</header>
+
+<main class="game-container">
+  <div class="game-row">
+    <div class="stack-container">
+      <div class="stack-title">Your Stack</div>
+      <div class="stack" id="playerStack"></div>
+      <div class="player-info" id="playerInfo">Pogs Owned: 5</div>
+      <div class="collected-container" id="collectedPogs"></div>
+    </div>
+  </div>
+
+  <button class="slam-button" id="slamBtn">SLAM!</button>
+  
+  <div class="player-info">
+    Tap or click "SLAM!" to drop your slammer. Face-up pogs are collected!
+  </div>
+</main>
+
+<script>
+let pogs = [
+  {faceDown: true},
+  {faceDown: true},
+  {faceDown: true},
+  {faceDown: true},
+  {faceDown: true},
+];
+
+const playerStack = document.getElementById('playerStack');
+const collectedContainer = document.getElementById('collectedPogs');
+const playerInfo = document.getElementById('playerInfo');
+
+function renderStack() {
+  playerStack.innerHTML = '';
+  for (let i = 0; i < pogs.length; i++) {
+    const pogElem = document.createElement('div');
+    pogElem.classList.add('pog', 'offscreen');
+    if (pogs[i].faceDown) {
+      pogElem.classList.add('facedown');
+    }
+    pogElem.style.bottom = `${i * 12}px`;
+    
+    const front = document.createElement('div');
+    front.className = 'pog-face pog-front';
+    const back = document.createElement('div');
+    back.className = 'pog-face pog-back';
+
+    pogElem.appendChild(front);
+    pogElem.appendChild(back);
+    playerStack.appendChild(pogElem);
+  }
+
+  // Trigger the entrance animation after a short delay to ensure rendering
+  setTimeout(() => {
+    playerStack.classList.add('stack-entrance');
+    const pogElems = playerStack.querySelectorAll('.pog');
+    pogElems.forEach(p => {
+      p.classList.remove('offscreen');
+      p.classList.add('final-position');
+    });
+  }, 100); // slight delay for a more visible effect
+}
+
+function slam() {
+  // Add slam animation
+  playerStack.classList.add('slam-animation');
+  setTimeout(() => playerStack.classList.remove('slam-animation'), 300);
+
+  const pogElems = playerStack.querySelectorAll('.pog');
+  pogElems.forEach((pogElem, index) => {
+    // 50% chance of flipping face up on slam
+    if (Math.random() > 0.5) {
+      pogElem.classList.remove('facedown');
+
+      // Knock this pog off after a short delay
+      setTimeout(() => {
+        pogElem.style.setProperty('--randX', Math.random().toString());
+        pogElem.style.setProperty('--randY', Math.random().toString());
+        pogElem.classList.add('knockoff');
+
+        pogElem.addEventListener('animationend', () => {
+          collectedContainer.appendChild(createCollectedPog());
+          pogElem.remove();
+          updatePlayerInfo();
+        }, {once: true});
+      }, 300);
+    }
+  });
+
+  // Remove pogs that got knocked off from the main array
+  // In this simple logic, half remain face-down.
+  pogs = pogs.filter(() => Math.random() <= 0.5);
+
+  // Restack remaining after a delay
+  setTimeout(() => {
+    renderStack();
+    updatePlayerInfo();
+  }, 1500);
+}
+
+function createCollectedPog() {
+  const collectedPog = document.createElement('div');
+  collectedPog.style.width = '30px';
+  collectedPog.style.height = '30px';
+  collectedPog.style.borderRadius = '50%';
+  collectedPog.style.border = '2px solid var(--accent)';
+  collectedPog.style.background = 'white';
+  return collectedPog;
+}
+
+function updatePlayerInfo() {
+  const collectedCount = collectedContainer.querySelectorAll('div').length;
+  playerInfo.textContent = `Pogs Owned: ${pogs.length + collectedCount}`;
+}
+
+// Initialize stack on page load
+document.addEventListener('DOMContentLoaded', () => {
+  renderStack();
+  updatePlayerInfo();
+});
+
+document.getElementById('slamBtn').addEventListener('click', slam);
+
+</script>
+
+</body>
+</html>

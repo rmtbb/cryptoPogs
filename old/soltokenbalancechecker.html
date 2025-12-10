@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Solana Token Balance Checker</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .container {
+      background-color: #f9f9f9;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      color: #3d3d3d;
+    }
+    input, button {
+      padding: 10px;
+      margin: 10px 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #9945FF;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      background-color: #8034e6;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 4px;
+      background-color: #e9e9e9;
+      display: none;
+    }
+    .error {
+      color: red;
+      display: none;
+    }
+    .loading {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Solana Token Balance Checker</h1>
+    
+    <div>
+      <label for="wallet-address">Wallet Address:</label>
+      <input type="text" id="wallet-address" placeholder="Enter Solana wallet address">
+    </div>
+    
+    <div>
+      <label for="token-address">Token Mint Address:</label>
+      <input type="text" id="token-address" placeholder="Enter token mint address">
+    </div>
+    
+    <button id="check-balance">Check Balance</button>
+    
+    <div id="loading" class="loading">Loading...</div>
+    <div id="error" class="error"></div>
+    <div id="result" class="result"></div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/solana-web3.js/1.78.3/index.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const checkBalanceButton = document.getElementById('check-balance');
+      const walletAddressInput = document.getElementById('wallet-address');
+      const tokenAddressInput = document.getElementById('token-address');
+      const resultDiv = document.getElementById('result');
+      const errorDiv = document.getElementById('error');
+      const loadingDiv = document.getElementById('loading');
+
+      checkBalanceButton.addEventListener('click', async () => {
+        const walletAddress = walletAddressInput.value.trim();
+        const tokenAddress = tokenAddressInput.value.trim();
+        
+        if (!walletAddress || !tokenAddress) {
+          showError('Please enter both wallet address and token mint address');
+          return;
+        }
+
+        try {
+          showLoading();
+          hideError();
+          hideResult();
+          
+          const balance = await getTokenBalance(walletAddress, tokenAddress);
+          showResult(`Wallet has ${balance} tokens of ${tokenAddress}`);
+        } catch (error) {
+          showError(`Error: ${error.message}`);
+        } finally {
+          hideLoading();
+        }
+      });
+
+      async function getTokenBalance(walletAddress, tokenMintAddress) {
+        try {
+          // Connect to Solana network (mainnet-beta)
+          const connection = new solanaWeb3.Connection(
+            solanaWeb3.clusterApiUrl('mainnet-beta'), 
+            'confirmed'
+          );
+          
+          // Convert addresses to PublicKey objects
+          const wallet = new solanaWeb3.PublicKey(walletAddress);
+          const tokenMint = new solanaWeb3.PublicKey(tokenMintAddress);
+          
+          // Find all token accounts owned by the wallet
+          const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
+            wallet,
+            { programId: solanaWeb3.TOKEN_PROGRAM_ID }
+          );
+          
+          // Find the specific token account that holds the token we're looking for
+          const tokenAccount = tokenAccounts.value.find(
+            account => account.account.data.parsed.info.mint === tokenMintAddress
+          );
+          
+          if (!tokenAccount) {
+            return `No tokens found for this mint address`;
+          }
+          
+          // Get the balance and decimals
+          const balance = tokenAccount.account.data.parsed.info.tokenAmount.amount;
+          const decimals = tokenAccount.account.data.parsed.info.tokenAmount.decimals;
+          
+          // Convert to human-readable format
+          const balanceInTokens = balance / Math.pow(10, decimals);
+          
+          return balanceInTokens;
+        } catch (error) {
+          console.error('Error fetching token balance:', error);
+          throw error;
+        }
+      }
+
+      function showResult(message) {
+        resultDiv.textContent = message;
+        resultDiv.style.display = 'block';
+      }
+
+      function hideResult() {
+        resultDiv.style.display = 'none';
+      }
+
+      function showError(message) {
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+      }
+
+      function hideError() {
+        errorDiv.style.display = 'none';
+      }
+
+      function showLoading() {
+        loadingDiv.style.display = 'block';
+        checkBalanceButton.disabled = true;
+      }
+
+      function hideLoading() {
+        loadingDiv.style.display = 'none';
+        checkBalanceButton.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

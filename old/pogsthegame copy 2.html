@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Pogs Game</title>
+<style>
+body {
+  font-family: sans-serif;
+  background: #f2f2f2;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+}
+
+#game {
+  background: #fff;
+  padding: 20px;
+  margin-top: 50px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  width: 300px;
+  text-align: center;
+}
+
+#scoreboard {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 20px;
+}
+
+.player-score {
+  text-align: center;
+}
+
+.player-score h2 {
+  margin: 0;
+  font-size: 1.2em;
+}
+
+.score {
+  font-size: 1.5em;
+  margin-top: 5px;
+}
+
+#play-area {
+  position: relative;
+  min-height: 300px;
+}
+
+#stack-area {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  margin-bottom: 20px;
+}
+
+#stack {
+  position: relative;
+  width: 100px;
+  height: 120px;
+  margin: 0 auto;
+  transition: transform 0.3s;
+}
+
+.pog {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  position: absolute;
+  left: 0;
+  background: linear-gradient(45deg, #ffa, #ffd);
+  border: 2px solid #ccc;
+  transform: translateY(0px);
+  transition: transform 0.3s, background 0.3s;
+}
+
+.pog.face-up {
+  background: linear-gradient(45deg, #f66, #faa);
+}
+
+#slammer {
+  background: #333;
+  color: #fff;
+  padding: 10px 20px;
+  margin: 20px auto 0;
+  border-radius: 4px;
+  cursor: pointer;
+  width: 100px;
+  transition: transform 0.3s;
+  user-select: none;
+}
+
+#slammer:active {
+  transform: scale(0.95);
+}
+
+#message {
+  margin-top: 10px;
+  min-height: 20px;
+  font-weight: bold;
+}
+
+#restart-btn {
+  margin-top: 20px;
+  padding: 10px;
+  background: #4CAF50;
+  border: none;
+  color: #fff;
+  border-radius: 5px;
+  cursor: pointer;
+  display: none;
+}
+
+#restart-btn:hover {
+  background: #45a049;
+}
+</style>
+</head>
+<body>
+<div id="game">
+  <h1>Milk Caps (Pogs) Game</h1>
+  <div id="scoreboard">
+    <div class="player-score">
+      <h2>Player 1</h2>
+      <div class="score" id="p1-score">0</div>
+    </div>
+    <div class="player-score">
+      <h2>Player 2</h2>
+      <div class="score" id="p2-score">0</div>
+    </div>
+  </div>
+  
+  <div id="play-area">
+    <div id="stack-area">
+      <div id="stack"></div>
+      <div id="slammer">Slam!</div>
+    </div>
+    <div id="message"></div>
+  </div>
+
+  <button id="restart-btn">Restart Game</button>
+</div>
+<script>
+// Basic game logic:
+// - Start with a stack of pogs, all face-down
+// - Two players alternate turns
+// - On a turn, player slams the stack (click on #slammer)
+// - Each pog in stack is randomly flipped face-up or face-down
+// - All face-up go to current player's score and are removed from stack
+// - Remaining face-down pogs are restacked for next player
+// - Continue until no pogs remain
+// - Player with highest score wins
+
+let totalPogs = 12; // number of pogs to start with
+let currentPlayer = 1;
+let p1Score = 0;
+let p2Score = 0;
+let pogs = []; // will store {id, faceUp: boolean}
+
+const stackEl = document.getElementById('stack');
+const p1ScoreEl = document.getElementById('p1-score');
+const p2ScoreEl = document.getElementById('p2-score');
+const slammerEl = document.getElementById('slammer');
+const messageEl = document.getElementById('message');
+const restartBtn = document.getElementById('restart-btn');
+
+function initGame() {
+  currentPlayer = 1;
+  p1Score = 0;
+  p2Score = 0;
+  pogs = [];
+  for (let i = 0; i < totalPogs; i++) {
+    pogs.push({ id: i, faceUp: false });
+  }
+  updateScores();
+  renderStack();
+  messageEl.textContent = `Player ${currentPlayer}'s turn`;
+  slammerEl.style.display = 'block';
+  restartBtn.style.display = 'none';
+}
+
+function renderStack() {
+  stackEl.innerHTML = '';
+  let offset = 0;
+  pogs.forEach((pog, index) => {
+    const pogEl = document.createElement('div');
+    pogEl.classList.add('pog');
+    if (pog.faceUp) {
+      pogEl.classList.add('face-up');
+    }
+    // stack them visually with a slight vertical offset
+    pogEl.style.transform = `translateY(${offset}px)`;
+    offset -= 5; // each subsequent pog slightly above the previous
+    stackEl.appendChild(pogEl);
+  });
+}
+
+function updateScores() {
+  p1ScoreEl.textContent = p1Score;
+  p2ScoreEl.textContent = p2Score;
+}
+
+function slam() {
+  if (pogs.length === 0) return;
+  
+  // Animate slammer movement slightly
+  slammerEl.style.transform = 'translateY(5px)';
+  setTimeout(() => {
+    slammerEl.style.transform = 'translateY(0)';
+    // After animation, flip pogs:
+    flipPogs();
+  }, 200);
+}
+
+function flipPogs() {
+  // Randomly flip each pog
+  pogs.forEach(pog => {
+    pog.faceUp = Math.random() < 0.5;
+  });
+  
+  // Collect face-up pogs
+  const faceUpCount = pogs.filter(p => p.faceUp).length;
+  if (faceUpCount > 0) {
+    if (currentPlayer === 1) {
+      p1Score += faceUpCount;
+    } else {
+      p2Score += faceUpCount;
+    }
+  }
+  
+  // Remove face-up pogs from stack
+  pogs = pogs.filter(p => !p.faceUp);
+  
+  updateScores();
+  renderStack();
+
+  // Check end conditions
+  if (pogs.length === 0) {
+    endGame();
+  } else {
+    // Switch players
+    currentPlayer = currentPlayer === 1 ? 2 : 1;
+    messageEl.textContent = `Player ${currentPlayer}'s turn`;
+  }
+}
+
+function endGame() {
+  // Determine winner
+  let winner;
+  if (p1Score > p2Score) winner = 1;
+  else if (p2Score > p1Score) winner = 2;
+  else winner = 0; // tie
+  
+  if (winner === 0) {
+    messageEl.textContent = `It's a tie!`;
+  } else {
+    messageEl.textContent = `Player ${winner} wins!`;
+  }
+  slammerEl.style.display = 'none';
+  restartBtn.style.display = 'inline-block';
+}
+
+slammerEl.addEventListener('click', slam);
+restartBtn.addEventListener('click', initGame);
+
+// Initialize on load
+initGame();
+</script>
+</body>
+</html>
