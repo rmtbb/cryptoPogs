@@ -322,8 +322,23 @@
         style="padding:10px 20px; background:#6d28d9; color:white; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">Join
         Game</button>
     </div>
+    <div id="room-list" style="margin-top:20px; text-align:center;">
+      <h3 style="color:#10b981; margin-bottom:10px;">Available Rooms:</h3>
+      <div id="rooms-container" style="display:flex; flex-direction:column; gap:5px;"></div>
+    </div>
     <div id="status-msg" style="margin-top:15px; color:#fba;"></div>
   </div>
+
+  <style>
+    .flying-pog {
+      position: fixed;
+      z-index: 3000;
+      transition: all 0.8s ease-in-out;
+      pointer-events: none;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    }
+  </style>
+
 
   <div id="container">
     <div id="player1-side">
@@ -379,8 +394,10 @@
     const roomInput = document.getElementById('room-input');
     const nameInput = document.getElementById('player-name-input');
     const statusMsg = document.getElementById('status-msg');
+    const roomsContainer = document.getElementById('rooms-container');
 
     const p1NameEl = document.getElementById('p1-name');
+
     const p2NameEl = document.getElementById('p2-name');
     const p1ScoreNameEl = document.getElementById('p1-score-name');
     const p2ScoreNameEl = document.getElementById('p2-score-name');
@@ -400,8 +417,35 @@
 
     let myPlayerNum = 0; // 1 or 2
     let currentRoomId = "";
+    let isAnimating = false;
+    let pendingState = null;
 
     // --- Lobby Logic ---
+    socket.emit('getRooms'); // Ask for rooms on load
+
+    socket.on('roomList', (rooms) => {
+      roomsContainer.innerHTML = '';
+      if (rooms.length === 0) {
+        roomsContainer.innerHTML = '<span style="color:#666;">No waiting rooms</span>';
+      } else {
+        rooms.forEach(r => {
+          const btn = document.createElement('button');
+          btn.textContent = `${r.id} (${r.playerCount}/2)`;
+          btn.style.padding = "5px 10px";
+          btn.style.background = "rgba(255,255,255,0.1)";
+          btn.style.border = "1px solid #10b981";
+          btn.style.color = "white";
+          btn.style.cursor = "pointer";
+          btn.style.borderRadius = "4px";
+          btn.onclick = () => {
+            roomInput.value = r.id;
+            joinBtn.click();
+          };
+          roomsContainer.appendChild(btn);
+        });
+      }
+    });
+
     joinBtn.addEventListener('click', () => {
       const room = roomInput.value.trim();
       const name = nameInput.value.trim() || "Anonymous";
@@ -448,7 +492,11 @@
     });
 
     socket.on('gameStateUpdate', (gameState) => {
-      renderGameState(gameState);
+      if (isAnimating) {
+        pendingState = gameState;
+      } else {
+        renderGameState(gameState);
+      }
     });
 
     socket.on('slamResult', (result) => {
@@ -460,7 +508,87 @@
       setTimeout(() => {
         slammerEl.style.transform = 'translateY(0)';
       }, 150);
+
+      // Animate Flying Pogs if any collected
+      if (result.flippedCount > 0) {
+        animateCollection(result.flippedPogs, result.slammer);
+      }
     });
+
+    function animateCollection(flippedPogs, collectorNum) {
+      isAnimating = true;
+
+      // Identify target container
+      const targetContainer = (collectorNum === 1) ? p1CollectedEl : p2CollectedEl;
+      const targetRect = targetContainer.getBoundingClientRect();
+      const targetX = targetRect.left + targetRect.width / 2;
+      const targetY = targetRect.top + targetRect.height / 2;
+
+      let completedAnim = 0;
+      const totalAnim = flippedPogs.length;
+
+      flippedPogs.forEach(pogData => {
+        // Find Element in stack
+        const stackPog = document.querySelector(`.pog[data-id="${pogData.id}"]`);
+        if (stackPog) {
+          // 1. Get coords
+          const rect = stackPog.getBoundingClientRect();
+
+          // 2. Clone it for animation
+          const flyingPog = stackPog.cloneNode(true);
+          flyingPog.classList.add('flying-pog');
+
+          // Force face up style instantly on clone
+          flyingPog.classList.remove('face-down');
+          flyingPog.classList.add('face-up');
+
+          // Set initial position
+          flyingPog.style.top = rect.top + 'px';
+          flyingPog.style.left = rect.left + 'px';
+          flyingPog.style.transform = 'scale(1) rotate(0deg)';
+
+          // Append to body to fly freely
+          document.body.appendChild(flyingPog);
+
+          // Hide original
+          stackPog.style.opacity = '0';
+
+          // 3. Trigger Flip & Fly (next Tick)
+          requestAnimationFrame(() => {
+            flyingPog.style.top = (targetY - 30) + 'px'; // -30 for half size roughly
+            flyingPog.style.left = (targetX - 30) + 'px';
+            flyingPog.style.transform = 'scale(0.5) rotate(720deg)'; // Spin and shrink
+            flyingPog.style.opacity = '0'; // Fade out at end
+          });
+
+          // 4. Cleanup
+          setTimeout(() => {
+            flyingPog.remove();
+            completedAnim++;
+            if (completedAnim === totalAnim) {
+              isAnimating = false;
+              if (pendingState) {
+                renderGameState(pendingState);
+                pendingState = null;
+              }
+            }
+          }, 800); // Match transition duration
+        } else {
+          // Fallback if element not found
+          completedAnim++;
+        }
+      });
+
+      // Safety fallback if loop doesn't run or pogs not found
+      if (totalAnim === 0) {
+        isAnimating = false;
+        if (pendingState) {
+          renderGameState(pendingState);
+          pendingState = null;
+        }
+      }
+    }
+
 
     socket.on('gameOver', (data) => {
       renderGameState(data.finalState);
@@ -551,6 +679,8 @@
         const pog = pogs[i];
         const pogEl = document.createElement('div');
         pogEl.classList.add('pog');
+        pogEl.dataset.id = pog.id; // CRITICAL for animation
+
 
         const imgEl = document.createElement('img');
         imgEl.src = pog.coin.image;
