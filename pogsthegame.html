@@ -312,38 +312,63 @@
 <body>
   <div id="lobby-overlay"
     style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:2000; display:flex; justify-content:center; align-items:center; flex-direction:column; color:white; font-family: 'Inter', sans-serif;">
-    <h1 style="margin-bottom:30px; color:#10b981; font-size: 2.5rem; text-shadow: 0 2px 10px rgba(16, 185, 129, 0.3);">
+    <h1 style="margin-bottom:20px; color:#10b981; font-size: 2.5rem; text-shadow: 0 2px 10px rgba(16, 185, 129, 0.3);">
       Crypto Pogs Online</h1>
 
     <div
       style="background:#1a1a2e; padding:40px; border-radius:16px; width: 400px; text-align:center; border: 1px solid #4c1d95; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
 
-      <div style="margin-bottom: 20px;">
-        <label style="display:block; text-align:left; color:#a78bfa; margin-bottom: 5px; font-size:0.9rem;">My
-          Name</label>
-        <input type="text" id="player-name-input" placeholder="Enter nickname..."
-          style="width:100%; padding:12px; border-radius:8px; border:2px solid #4c1d95; background: rgba(0,0,0,0.2); color:white; font-size:1rem; outline:none; transition: border-color 0.2s;">
-      </div>
+      <!-- Auth Section -->
+      <div id="auth-section">
+        <div style="display:flex; justify-content:center; gap:10px; margin-bottom:20px;">
+          <button id="show-login" class="tab-btn active">Login</button>
+          <button id="show-register" class="tab-btn">Register</button>
+        </div>
 
-      <!-- Room List Section -->
-      <div id="room-list-section" style="margin-bottom: 25px;">
-        <h3
-          style="color:#10b981; margin-bottom:15px; font-size:1.1rem; text-align:left; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom:10px;">
-          Join an Active Game</h3>
-        <div id="rooms-container"
-          style="display:flex; flex-direction:column; gap:10px; max-height: 200px; overflow-y: auto;">
-          <div style="color:#666; font-style:italic; padding: 10px;">Searching for games...</div>
+        <div id="login-form">
+          <input type="text" id="login-username" placeholder="Username" class="auth-input">
+          <input type="password" id="login-password" placeholder="Password" class="auth-input">
+          <button id="login-btn" class="action-btn">Login</button>
+        </div>
+
+        <div id="register-form" style="display:none;">
+          <input type="text" id="reg-username" placeholder="Choose Username" class="auth-input">
+          <input type="password" id="reg-password" placeholder="Choose Password" class="auth-input">
+          <button id="register-btn" class="action-btn">Create Account</button>
         </div>
       </div>
 
-      <!-- Create/Manual Join Section -->
-      <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
-        <p style="color:#666; font-size: 0.9rem; margin-bottom: 10px;">Or create a new room:</p>
-        <div style="display:flex; gap:10px;">
-          <input type="text" id="room-input" placeholder="Room ID"
-            style="flex:1; padding:10px; border-radius:8px; border:2px solid #4c1d95; background: rgba(0,0,0,0.2); color:white; font-size:0.9rem;">
-          <button id="join-btn"
-            style="padding:10px 20px; background:#6d28d9; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; transition: transform 0.1s;">GO</button>
+      <!-- Logged In Lobby Section -->
+      <div id="lobby-section" style="display:none;">
+        <div style="margin-bottom:20px; color:#e5e7eb;">
+          Welcome, <span id="user-display" style="color:#10b981; font-weight:bold;"></span>!
+          <div style="font-size:0.9rem; margin-top:5px;">
+            Your Pogs: <span id="pog-count">0</span> | Refills: <span id="refill-count">0</span>
+          </div>
+          <button id="refill-btn"
+            style="display:none; margin-top:5px; padding:5px 10px; font-size:0.8rem; background:#f59e0b; border:none; border-radius:4px; cursor:pointer; color: #fff;">Get
+            Refill Pack!</button>
+        </div>
+
+        <!-- Room List Section -->
+        <div id="room-list-section" style="margin-bottom: 25px;">
+          <h3
+            style="color:#10b981; margin-bottom:15px; font-size:1.1rem; text-align:left; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom:10px;">
+            Join an Active Game</h3>
+          <div id="rooms-container"
+            style="display:flex; flex-direction:column; gap:10px; max-height: 200px; overflow-y: auto;">
+            <div style="color:#666; font-style:italic; padding: 10px;">Searching for games...</div>
+          </div>
+        </div>
+
+        <!-- Create/Manual Join Section -->
+        <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
+          <p style="color:#666; font-size: 0.9rem; margin-bottom: 10px;">Or create a new room:</p>
+          <div style="display:flex; gap:10px;">
+            <input type="text" id="room-input" placeholder="Room ID"
+              style="flex:1; padding:10px; border-radius:8px; border:2px solid #4c1d95; background: rgba(0,0,0,0.2); color:white; font-size:0.9rem;">
+            <button id="join-btn" class="action-btn" style="padding:10px 20px;">GO</button>
+          </div>
         </div>
       </div>
 
@@ -377,6 +402,48 @@
       background: rgba(16, 185, 129, 0.1);
       border-color: #10b981;
       transform: translateX(2px);
+    }
+
+    .auth-input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 2px solid #4c1d95;
+      background: rgba(0, 0, 0, 0.2);
+      color: white;
+      font-size: 1rem;
+      outline: none;
+      margin-bottom: 10px;
+    }
+
+    .action-btn {
+      width: 100%;
+      padding: 12px;
+      background: #6d28d9;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.2s;
+    }
+
+    .action-btn:hover {
+      background: #5b21b6;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: #666;
+      font-weight: bold;
+      cursor: pointer;
+      padding-bottom: 5px;
+    }
+
+    .tab-btn.active {
+      color: #10b981;
+      border-bottom: 2px solid #10b981;
     }
   </style>
 
@@ -433,9 +500,53 @@
     const lobbyOverlay = document.getElementById('lobby-overlay');
     const joinBtn = document.getElementById('join-btn');
     const roomInput = document.getElementById('room-input');
-    const nameInput = document.getElementById('player-name-input');
     const statusMsg = document.getElementById('status-msg');
     const roomsContainer = document.getElementById('rooms-container');
+
+    // Auth UI
+    const authSection = document.getElementById('auth-section');
+    const lobbySection = document.getElementById('lobby-section');
+    const loginForm = document.getElementById('login-form');
+    const regForm = document.getElementById('register-form');
+    const showLoginBtn = document.getElementById('show-login');
+    const showRegBtn = document.getElementById('show-register');
+
+    const userDisplay = document.getElementById('user-display');
+    const pogCountEl = document.getElementById('pog-count');
+    const refillCountEl = document.getElementById('refill-count');
+    const refillBtn = document.getElementById('refill-btn');
+
+    document.getElementById('login-btn').addEventListener('click', () => {
+      const user = document.getElementById('login-username').value;
+      const pass = document.getElementById('login-password').value;
+      socket.emit('login', { username: user, password: pass });
+    });
+
+    document.getElementById('register-btn').addEventListener('click', () => {
+      const user = document.getElementById('reg-username').value;
+      const pass = document.getElementById('reg-password').value;
+      socket.emit('register', { username: user, password: pass });
+    });
+
+    showLoginBtn.addEventListener('click', () => {
+      loginForm.style.display = 'block';
+      regForm.style.display = 'none';
+      showLoginBtn.classList.add('active');
+      showRegBtn.classList.remove('active');
+    });
+
+    showRegBtn.addEventListener('click', () => {
+      loginForm.style.display = 'none';
+      regForm.style.display = 'block';
+      showLoginBtn.classList.remove('active');
+      showRegBtn.classList.add('active');
+    });
+
+    refillBtn.addEventListener('click', () => {
+      if (confirm("Refill your pogs? This will be tracked.")) {
+        socket.emit('refill');
+      }
+    });
 
     const p1NameEl = document.getElementById('p1-name');
 
@@ -460,9 +571,48 @@
     let currentRoomId = "";
     let isAnimating = false;
     let pendingState = null;
+    let currentUser = null;
+
+    // --- Auth Logic ---
+    socket.on('authSuccess', (userData) => {
+      currentUser = userData;
+      authSection.style.display = 'none';
+      lobbySection.style.display = 'block';
+      updateUserInfo();
+      socket.emit('getRooms');
+    });
+
+    socket.on('authError', (msg) => {
+      statusMsg.textContent = msg;
+    });
+
+    socket.on('inventoryUpdate', (data) => {
+      if (currentUser) {
+        currentUser.pogs = data.pogs;
+        if (data.refillCount !== undefined) currentUser.refillCount = data.refillCount;
+        updateUserInfo();
+      }
+    });
+
+    function updateUserInfo() {
+      userDisplay.textContent = currentUser.username;
+
+      // Check real pog count
+      // Inventory is list of IDs
+      pogCountEl.textContent = currentUser.pogs.length;
+      refillCountEl.textContent = currentUser.refillCount;
+
+      if (currentUser.pogs.length < 6) {
+        refillBtn.style.display = 'inline-block';
+        statusMsg.textContent = "You need at least 6 pogs to play!";
+      } else {
+        refillBtn.style.display = 'none';
+        statusMsg.textContent = "";
+      }
+    }
 
     // --- Lobby Logic ---
-    socket.emit('getRooms'); // Ask for rooms on load
+    // Removed auto getRooms on load, wait for login
 
     socket.on('roomList', (rooms) => {
       roomsContainer.innerHTML = '';
@@ -483,24 +633,23 @@
     });
 
     joinBtn.addEventListener('click', () => {
+      if (!currentUser) return;
       const room = roomInput.value.trim();
-      const name = nameInput.value.trim() || "Anonymous";
       if (!room) {
         statusMsg.textContent = "Please enter or select a Room ID";
         return;
       }
-      currentRoomId = room;
-      // Save name for convenience?
-      localStorage.setItem('pogPlayerName', name);
+      if (currentUser.pogs.length < 6) {
+        statusMsg.textContent = "Not enough pogs! Use Refill.";
+        return;
+      }
 
-      socket.emit('joinRoom', room, name);
+      currentRoomId = room;
+      socket.emit('joinRoom', room); // No name needed, server knows user
       statusMsg.textContent = "Joining...";
     });
 
-    // Restore name if exists
-    if (localStorage.getItem('pogPlayerName')) {
-      nameInput.value = localStorage.getItem('pogPlayerName');
-    }
+    // Removed localstorage name logic since we use auth now
 
     socket.on('errorMsg', (msg) => {
       statusMsg.textContent = msg;
@@ -510,6 +659,7 @@
     socket.on('updateRoom', (data) => {
       // data.players contains list of players
       // data.state is 'waiting' or 'playing'
+      isGameActive = (data.state === 'playing');
       const players = data.players;
       const me = players.find(p => p.id === socket.id);
       if (me) {
@@ -532,9 +682,18 @@
     });
 
     socket.on('gameStart', (gameState) => {
-      // Clear any end-game screens/buttons immediately
-      resultsEl.style.display = 'none';
-      restartBtn.style.display = 'none';
+      isGameActive = true;
+
+      // If results are showing and local player didn't trigger restart
+      if (resultsEl.style.display === 'block' && !localActionTaken) {
+        restartBtn.textContent = "Join Match";
+        restartBtn.style.display = 'inline-block';
+      } else {
+        resultsEl.style.display = 'none';
+        restartBtn.style.display = 'none';
+      }
+
+      localActionTaken = false;
       slammerEl.style.display = 'none'; // Hide until state says it's my turn
 
       renderGameState(gameState);
@@ -639,6 +798,9 @@
     }
 
 
+    let localActionTaken = false;
+    let isGameActive = false;
+
     socket.on('gameOver', (data) => {
       renderGameState(data.finalState);
 
@@ -649,7 +811,9 @@
 
       messageEl.textContent = `GAME OVER. ${winnerText}`;
       slammerEl.style.display = 'none';
+      restartBtn.textContent = "Restart Game";
       restartBtn.style.display = 'inline-block';
+      isGameActive = false;
 
       showResults(data.finalState, data.winner);
     });
@@ -657,17 +821,28 @@
     socket.on('playerLeft', (id) => {
       messageEl.textContent = "A player disconnected.";
       slammerEl.style.display = 'none';
+      isGameActive = false;
     });
 
     // --- Game Inputs ---
     slammerEl.addEventListener('click', () => {
+      resultsEl.style.display = 'none';
+      restartBtn.style.display = 'none';
       socket.emit('slam', currentRoomId);
     });
 
     restartBtn.addEventListener('click', () => {
-      socket.emit('restartGame', currentRoomId);
-      // We don't manually hide here anymore, we wait for 'gameStart' event
-      // but we can hide it for instant feedback if we want, but 'gameStart' is safer for sync
+      if (isGameActive) {
+        // Game already running, just dismiss results
+        resultsEl.style.display = 'none';
+        restartBtn.style.display = 'none';
+      } else {
+        socket.emit('restartGame', currentRoomId);
+        localActionTaken = true;
+        // User requested immediate clear
+        resultsEl.style.display = 'none';
+        restartBtn.style.display = 'none';
+      }
     });
 
     // --- Rendering ---

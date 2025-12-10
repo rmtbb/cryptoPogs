@@ -6,8 +6,13 @@ const path = require('path');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
+const db = require('./database');
+
+// Initialize Database
+db.initDB();
 
 // Serve static files from the current directory
+
 app.use(express.static(__dirname));
 
 // Game State Storage (in memory for simplicity)
@@ -39,8 +44,63 @@ function shuffleArray(array) {
 io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
 
-    socket.on('joinRoom', (roomId, playerName) => {
+    // --- Auth Events ---
+    socket.on('register', async ({ username, password }) => {
+        try {
+            const user = await db.createUser(username, password);
+            socket.user = user;
+            socket.emit('authSuccess', { username: user.username, pogs: user.pogs, refillCount: user.refillCount });
+        } catch (err) {
+            socket.emit('authError', 'Registration failed: ' + err.message);
+        }
+    });
+
+    socket.on('login', async ({ username, password }) => {
+        try {
+            const user = await db.loginUser(username, password);
+            socket.user = user;
+            socket.emit('authSuccess', { username: user.username, pogs: user.pogs, refillCount: user.refillCount });
+        } catch (err) {
+            socket.emit('authError', 'Login failed: ' + err.message);
+        }
+    });
+
+    socket.on('refill', async () => {
+        if (!socket.user) return;
+        try {
+            const newPogs = await db.refillPogs(socket.user.id);
+            socket.user.pogs = newPogs;
+            // Also update local refill count if we tracked it in memory object, but easiest to re-fetch or increment
+            const updatedUser = await db.getUser(socket.user.id);
+            socket.user.refillCount = updatedUser.refillCount;
+
+            socket.emit('inventoryUpdate', { pogs: newPogs, refillCount: updatedUser.refillCount });
+        } catch (err) {
+            socket.emit('errorMsg', 'Refill failed');
+        }
+    });
+
+    socket.on('joinRoom', async (roomId) => {
+        if (!socket.user) {
+            socket.emit('errorMsg', 'You must be logged in to play.');
+            return;
+        }
+
+        // Refresh user data from DB to ensure latest pogs
+        try {
+            const freshUser = await db.getUser(socket.user.id);
+            if (freshUser) socket.user = freshUser;
+        } catch (e) { console.error(e); }
+
+        // Check if player has enough pogs to play (need at least 1? or 6?)
+        // Game logic currently distributes 6 each, so let's req 6.
+        if (socket.user.pogs.length < 6) {
+            socket.emit('errorMsg', 'Not enough pogs! Need 6. Please refill.');
+            return;
+        }
+
         // Leave previous room if any
+
         // (Simplification: assuming one room per socket for now)
 
         socket.join(roomId);
@@ -60,7 +120,7 @@ io.on('connection', (socket) => {
                 p2Score: 0,
                 p1Collected: [],
                 p2Collected: [],
-                cryptoData: FALLBACK_CRYPTO_DATA
+                cryptoData: FALLBACK_CRYPTO_DATA // Still used for metadata lookup (images etc)
             };
         }
 
@@ -71,14 +131,18 @@ io.on('connection', (socket) => {
             return;
         }
 
+        // Prevent joining same room twice
+        if (room.players.find(p => p.id === socket.id)) return;
+
         // Add player
         const playerNum = room.players.length + 1;
         room.players.push({
             id: socket.id,
-            name: playerName || `Player ${playerNum}`,
-            num: playerNum
+            userId: socket.user.id, // DB ID
+            name: socket.user.username,
+            num: playerNum,
+            inventory: [...socket.user.pogs] // Copy inventory
         });
-
         // Notify room
         io.to(roomId).emit('updateRoom', {
             players: room.players,
@@ -126,6 +190,39 @@ io.on('connection', (socket) => {
             if (winner === 1) room.nextStarter = 2;
             else if (winner === 2) room.nextStarter = 1;
             else room.nextStarter = Math.random() < 0.5 ? 1 : 2; // Tie
+
+            // Update DB Inventories
+            // P1 has p1Collected, P2 has p2Collected
+            // But wait, the game logic was:
+            // original pogs were removed from stack.
+            // collected pogs are what they have NOW.
+
+            // Player 1's new inventory = p1Collected
+            // Player 2's new inventory = p2Collected
+
+            const p1 = room.players.find(p => p.num === 1);
+            const p2 = room.players.find(p => p.num === 2);
+
+            if (p1 && p1.userId) {
+                const p1InvIds = room.p1Collected.map(p => p.coin.id);
+                db.updateInventory(p1.userId, p1InvIds);
+                // Update socket user cache if connected
+                const s1 = io.sockets.sockets.get(p1.id);
+                if (s1 && s1.user) {
+                    s1.user.pogs = p1InvIds;
+                    s1.emit('inventoryUpdate', { pogs: p1InvIds });
+                }
+            }
+
+            if (p2 && p2.userId) {
+                const p2InvIds = room.p2Collected.map(p => p.coin.id);
+                db.updateInventory(p2.userId, p2InvIds);
+                const s2 = io.sockets.sockets.get(p2.id);
+                if (s2 && s2.user) {
+                    s2.user.pogs = p2InvIds;
+                    s2.emit('inventoryUpdate', { pogs: p2InvIds });
+                }
+            }
 
             io.to(roomId).emit('gameOver', {
                 winner: winner,
@@ -182,42 +279,52 @@ io.on('connection', (socket) => {
 });
 
 function initializeGame(room) {
-    // Use fallback data for now to ensure reliability, 
-    // in production we could fetch real data here too.
-    const chosen = [];
-    const totalPogs = 12;
-    const data = room.cryptoData;
+    const p1 = room.players.find(p => p.num === 1);
+    const p2 = room.players.find(p => p.num === 2);
 
-    // Pick random unique
-    const used = new Set();
-    while (chosen.length < totalPogs && chosen.length < data.length) {
-        let idx = Math.floor(Math.random() * data.length);
-        if (!used.has(idx)) {
-            used.add(idx);
-            chosen.push(data[idx]);
+    // Logic: each player contributes 6 pogs from their inventory
+    // If they have > 6, choose random 6? Or first 6? Random is better.
+
+    const p1Ids = p1.inventory;
+    const p2Ids = p2.inventory;
+
+    // Shuffle their personal stacks to pick random contributors
+    shuffleArray(p1Ids);
+    shuffleArray(p2Ids);
+
+    const p1Contrib = p1Ids.slice(0, 6);
+    const p2Contrib = p2Ids.slice(0, 6);
+
+    // Need to map IDs back to full coin objects (metadata)
+    // We'll search in FALLBACK_CRYPTO_DATA for now since that's what we have
+    const getCoinData = (id) => {
+        let c = room.cryptoData.find(x => x.id === id);
+        if (!c) {
+            // If not found (e.g. from older fallback list), try to find ANY match or use default
+            c = room.cryptoData.find(x => x.id === 'bitcoin'); // Fallback
         }
-    }
+        return c;
+    };
 
-    // Assign owners
     const compiledPogs = [];
-    // First 6 for P1
-    for (let i = 0; i < 6; i++) {
+
+    p1Contrib.forEach((id, i) => {
         compiledPogs.push({
             id: i,
             owner: 1,
-            coin: chosen[i],
+            coin: getCoinData(id),
             faceUp: false
         });
-    }
-    // Next 6 for P2
-    for (let i = 6; i < 12; i++) {
+    });
+
+    p2Contrib.forEach((id, i) => {
         compiledPogs.push({
-            id: i,
+            id: i + 6,
             owner: 2,
-            coin: chosen[i],
+            coin: getCoinData(id),
             faceUp: false
         });
-    }
+    });
 
     shuffleArray(compiledPogs);
     room.pogs = compiledPogs;
