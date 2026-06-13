@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Database (runtime state)
+pogs_db.sqlite
+
+# OS / editor junk
+.DS_Store
+*.log
+
+# Scratch files
+hello.txt
+hello2.txt
+
+# Knowledge graph output (regenerated locally)
+graphify-out/
+
+# Secrets — never commit
+.env
+.env.*
+*keypair*.json
+escrow-keypair.json
+*.pem
+

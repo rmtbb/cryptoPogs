@@ -3,973 +3,929 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Crypto Pogs Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Crypto Pogs — Slam to Win</title>
 
-  <!-- Open Graph Tags -->
   <meta property="og:title" content="Crypto Pogs: The Game" />
   <meta property="og:description"
-    content="Experience the nostalgia of pogs with a crypto twist. Collect, trade, and showcase your favorite cryptocurrency pogs in both digital and physical form." />
-  <meta property="og:image" content="https://github.com/nurdthug/CryptoPogs/blob/main/regpreview.png?raw=true" />
-  <meta property="og:url" content="https://nurdthug.github.io/CryptoPogs/pogsthegame" />
+    content="Stack 'em, slam 'em, keep 'em. Real-time crypto pog battles — nail the perfect slam and clean out your opponent." />
   <meta property="og:type" content="website" />
-
-  <!-- Favicon -->
   <link rel="icon" href="https://github.com/nurdthug/CryptoPogs/blob/main/favicon.png?raw=true" type="image/png">
 
-  <!-- Apple Touch Icons -->
-  <link rel="apple-touch-icon" sizes="180x180"
-    href="https://github.com/nurdthug/CryptoPogs/blob/main/home_screen_icon_180x180.png?raw=true">
-  <link rel="apple-touch-icon" sizes="192x192"
-    href="https://github.com/nurdthug/CryptoPogs/blob/main/home_screen_icon_192x192.png?raw=true">
-  <link rel="apple-touch-icon" sizes="256x256"
-    href="https://github.com/nurdthug/CryptoPogs/blob/main/home_screen_icon_256x256.png?raw=true">
-  <link rel="apple-touch-icon" sizes="512x512"
-    href="https://github.com/nurdthug/CryptoPogs/blob/main/home_screen_icon_512x512.png?raw=true">
-
-  <!-- Manifest -->
-  <link rel="manifest" href="/manifest.json">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=Russo+One&display=swap" rel="stylesheet">
 
   <style>
     :root {
-      --primary: #6d28d9;
-      --secondary: #4c1d95;
+      --primary: #7c3aed;
+      --primary-dk: #4c1d95;
       --accent: #10b981;
-      --background: #1a1a2e;
-      --text: #e5e7eb;
+      --accent-2: #06b6d4;
+      --gold: #fbbf24;
+      --danger: #ef4444;
+      --bg: #0c0a1d;
+      --bg-2: #16132e;
+      --panel: rgba(255, 255, 255, 0.04);
+      --panel-bd: rgba(255, 255, 255, 0.08);
+      --text: #e8eaf2;
+      --muted: #8b8ba7;
     }
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    html, body { height: 100%; }
 
     body {
-      font-family: 'Inter', sans-serif;
-      background: var(--background);
+      font-family: 'Inter', system-ui, sans-serif;
       color: var(--text);
-      line-height: 1.6;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
+      line-height: 1.5;
       min-height: 100vh;
-      padding: 2rem;
+      overflow-x: hidden;
+      background:
+        radial-gradient(1200px 600px at 80% -10%, rgba(124, 58, 237, 0.25), transparent 60%),
+        radial-gradient(900px 500px at 10% 110%, rgba(16, 185, 129, 0.18), transparent 55%),
+        var(--bg);
     }
 
-    #container {
-      display: flex;
-      align-items: flex-start;
-      gap: 1rem;
+    .display-font { font-family: 'Russo One', sans-serif; letter-spacing: 0.5px; }
+
+    /* ---------- Particle / FX canvas ---------- */
+    #fx-canvas {
+      position: fixed; inset: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 4000;
     }
 
-    #player1-side,
-    #player2-side {
-      background: rgba(255, 255, 255, 0.05);
-      padding: 10px;
-      border-radius: 8px;
-      width: 180px;
-      flex-shrink: 0;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    /* ============================ LOBBY ============================ */
+    #lobby-overlay {
+      position: fixed; inset: 0; z-index: 2000;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 20px; gap: 18px;
+      background:
+        radial-gradient(1000px 500px at 50% -10%, rgba(124, 58, 237, 0.3), transparent 60%),
+        var(--bg);
     }
 
-    #player1-side h2,
-    #player2-side h2 {
-      font-size: 1.2rem;
-      margin-bottom: 0.5rem;
-      background: linear-gradient(45deg, var(--accent), var(--primary));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+    .brand {
       text-align: center;
+      animation: floaty 5s ease-in-out infinite;
     }
-
-    #player1-side h3,
-    #player2-side h3 {
-      font-size: 1rem;
-      margin: 0.5rem 0;
-      color: var(--accent);
+    .brand h1 {
+      font-size: clamp(2.4rem, 7vw, 4rem);
+      background: linear-gradient(120deg, var(--accent), var(--accent-2) 40%, var(--primary));
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 4px 20px rgba(16, 185, 129, 0.35));
     }
+    .brand p { color: var(--muted); font-weight: 600; margin-top: 4px; letter-spacing: 2px; text-transform: uppercase; font-size: 0.78rem; }
 
-    .side-pogs {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-      margin-bottom: 0.5rem;
-    }
+    @keyframes floaty { 0%,100%{ transform: translateY(0);} 50%{ transform: translateY(-8px);} }
 
-    .side-pogs img {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      vertical-align: middle;
-    }
-
-    #game {
-      background: rgba(255, 255, 255, 0.05);
-      padding: 20px;
-      border-radius: 16px;
-      width: 320px;
-      text-align: center;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-      flex-shrink: 0;
+    .lobby-card {
+      width: min(440px, 94vw);
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+      border: 1px solid var(--panel-bd);
+      border-radius: 20px;
+      padding: 26px;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06);
       position: relative;
     }
 
-    #game h1 {
-      font-size: 1.8rem;
-      margin-bottom: 1rem;
-      background: linear-gradient(45deg, var(--accent), var(--primary));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+    #user-info-bar {
+      display: none; margin-bottom: 18px; padding: 12px 14px;
+      background: var(--panel); border: 1px solid var(--panel-bd); border-radius: 12px;
+      font-size: 0.92rem;
     }
+    #user-info-bar .uname { color: var(--accent); font-weight: 800; }
+    .stat-row { display: flex; gap: 14px; align-items: center; margin-top: 8px; font-size: 0.82rem; color: var(--muted); flex-wrap: wrap; }
+    .stat-row b { color: var(--text); }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 14px; border: none; border-radius: 12px;
+      font-weight: 800; font-size: 1rem; cursor: pointer; color: #fff;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dk));
+      transition: transform .12s ease, box-shadow .2s ease, filter .2s ease;
+      box-shadow: 0 8px 22px rgba(124,58,237,0.35);
+    }
+    .btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
+    .btn:active { transform: translateY(0) scale(0.98); }
+    .btn.green { background: linear-gradient(135deg, var(--accent), #059669); box-shadow: 0 8px 22px rgba(16,185,129,0.35); }
+    .btn.ghost { background: var(--panel); border: 1px solid var(--panel-bd); box-shadow: none; }
+    .btn.small { width: auto; padding: 6px 12px; font-size: 0.78rem; border-radius: 8px; }
+    .btn.amber { background: linear-gradient(135deg, var(--gold), #d97706); box-shadow: 0 8px 22px rgba(251,191,36,0.3); }
+    .btn.red { background: linear-gradient(135deg, var(--danger), #b91c1c); box-shadow:none; }
+
+    .play-buttons { display: flex; gap: 10px; margin-bottom: 22px; }
+
+    .section-title {
+      display: flex; align-items: center; gap: 8px;
+      color: var(--accent); font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px;
+      margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--panel-bd);
+    }
+    .section-title .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); animation: pulse 1.6s infinite; }
+    @keyframes pulse { 0%,100%{ opacity:1;} 50%{ opacity:0.3;} }
+
+    #rooms-container { display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto; }
+    .room-btn {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 14px; background: var(--panel); border: 1px solid var(--panel-bd);
+      border-radius: 10px; cursor: pointer; transition: all .18s ease;
+    }
+    .room-btn:hover { background: rgba(16,185,129,0.1); border-color: var(--accent); transform: translateX(3px); }
+    .room-btn .pill { font-size: 0.72rem; background: rgba(255,255,255,0.08); padding: 3px 10px; border-radius: 999px; }
+    .empty-hint { color: var(--muted); font-size: 0.85rem; font-style: italic; padding: 14px; text-align: center; }
+
+    /* Auth overlay */
+    #auth-overlay {
+      display: none; position: absolute; inset: 0; border-radius: 20px; padding: 26px;
+      background: linear-gradient(180deg, #1a1733, #14112a); z-index: 10;
+    }
+    #close-auth-btn { position: absolute; top: 12px; right: 16px; background: none; border: none; color: var(--muted); font-size: 1.6rem; cursor: pointer; }
+    .tabs { display: flex; gap: 18px; justify-content: center; margin-bottom: 20px; }
+    .tab-btn { background: none; border: none; color: var(--muted); font-weight: 800; cursor: pointer; padding-bottom: 6px; font-size: 1rem; }
+    .tab-btn.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
+    .auth-input {
+      width: 100%; padding: 13px; border-radius: 10px; margin-bottom: 12px;
+      border: 1.5px solid var(--panel-bd); background: rgba(0,0,0,0.25); color: #fff; font-size: 1rem; outline: none;
+      transition: border-color .15s ease;
+    }
+    .auth-input:focus { border-color: var(--accent); }
+
+    #status-msg { margin-top: 16px; min-height: 20px; color: var(--gold); font-size: 0.9rem; text-align: center; font-weight: 600; }
+
+    /* ============================ GAME ============================ */
+    #container { display: none; min-height: 100vh; flex-direction: column; align-items: center; padding: 16px; gap: 14px; }
+    #container.active { display: flex; }
+
+    #topbar { width: min(960px, 100%); display: flex; justify-content: space-between; align-items: center; }
+    #topbar .logo { font-size: 1.3rem; background: linear-gradient(120deg, var(--accent), var(--primary)); -webkit-background-clip: text; background-clip:text; -webkit-text-fill-color: transparent; }
+    .icon-btn { background: var(--panel); border: 1px solid var(--panel-bd); color: var(--text); width: 40px; height: 40px; border-radius: 10px; cursor: pointer; font-size: 1.1rem; }
 
     #scoreboard {
-      display: flex;
-      justify-content: space-around;
-      margin-bottom: 10px;
+      width: min(720px, 100%); display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px;
+    }
+    .pscore {
+      background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+      border: 1px solid var(--panel-bd); border-radius: 14px; padding: 12px 14px; text-align: center;
+      transition: all .25s ease;
+    }
+    .pscore.active-turn { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 24px rgba(16,185,129,0.3); transform: translateY(-2px); }
+    .pscore .pname { font-weight: 800; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pscore.p1 .pname { color: var(--accent); }
+    .pscore.p2 .pname { color: var(--accent-2); }
+    .pscore .pnum { font-size: 2.2rem; line-height: 1; margin-top: 4px; }
+    .vs { font-family:'Russo One'; color: var(--muted); font-size: 1.1rem; }
+
+    #turn-banner {
+      min-height: 28px; font-weight: 800; font-size: 1.05rem; text-align: center;
+      transition: color .2s ease;
     }
 
-    .player-score h2 {
-      margin: 0;
-      font-size: 1.1em;
-      color: var(--accent);
+    #board { width: min(960px, 100%); display: grid; grid-template-columns: 1fr minmax(280px, 360px) 1fr; gap: 12px; align-items: start; }
+    @media (max-width: 820px) {
+      #board { grid-template-columns: 1fr; }
+      .side-panel { order: 2; }
+      #game-col { order: 1; }
     }
 
-    .score {
-      font-size: 1.5em;
-      margin-top: 5px;
-      color: var(--text);
+    .side-panel {
+      background: var(--panel); border: 1px solid var(--panel-bd); border-radius: 14px; padding: 12px;
     }
+    .side-panel h3 { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin: 4px 0 6px; }
+    .side-panel .who { font-weight: 800; margin-bottom: 8px; }
+    .side-pogs { display: flex; flex-wrap: wrap; gap: 4px; min-height: 34px; }
+    .side-pogs img { width: 30px; height: 30px; border-radius: 50%; background: #000; }
 
-    #play-area {
-      position: relative;
-    }
+    #game-col { display: flex; flex-direction: column; align-items: center; gap: 10px; }
 
     #stack-area {
-      position: relative;
-      width: 100%;
-      height: 250px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-top: 60px;
-      /* Increased to move the stack lower down */
+      position: relative; width: 100%; height: 300px;
+      display: flex; align-items: flex-end; justify-content: center;
+      perspective: 900px;
     }
-
-    #stack {
-      position: relative;
-      width: 100px;
-      height: 100%;
-      margin: 0 auto;
-      transition: transform 0.15s ease;
+    #stack-shadow {
+      position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+      width: 120px; height: 26px; border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(0,0,0,0.55), transparent 70%);
     }
+    #stack { position: relative; width: 116px; height: 100%; margin: 0 auto; transition: transform .12s ease; }
 
     .pog {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      position: absolute;
-      background: var(--background);
-      border: 2px solid rgba(255, 255, 255, 0.2);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.8em;
-      text-align: center;
-      cursor: pointer;
-      transition: transform 0.15s ease, background 0.15s ease, z-index 0.15s ease;
-
-      transform: perspective(800px) rotateX(5deg);
-      transform-style: preserve-3d;
+      width: 110px; height: 110px; border-radius: 50%; position: absolute; left: 3px;
+      display: flex; align-items: center; justify-content: center;
+      background: radial-gradient(circle at 35% 30%, #2a2748, #15122b 75%);
+      border: 3px solid rgba(255,255,255,0.15);
+      box-shadow: 0 6px 14px rgba(0,0,0,0.5);
+      transition: transform .15s ease, box-shadow .2s ease, opacity .2s ease;
     }
+    .pog img { width: 64px; height: 64px; border-radius: 50%; }
+    .pog .sym { position: absolute; bottom: 6px; font-size: 0.6rem; font-weight: 800; color:#fff; background: rgba(0,0,0,0.55); padding: 1px 7px; border-radius: 999px; }
+    .pog.face-down img { filter: grayscale(0.4) brightness(0.7); }
+    .pog.face-down .sym { display: none; }
 
-    .pog img {
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-    }
+    /* rarity rings */
+    .pog.r-common  { border-color: rgba(148,163,184,0.6); }
+    .pog.r-rare    { border-color: #38bdf8; box-shadow: 0 6px 14px rgba(0,0,0,0.5), 0 0 14px rgba(56,189,248,0.5); }
+    .pog.r-epic    { border-color: #c084fc; box-shadow: 0 6px 14px rgba(0,0,0,0.5), 0 0 18px rgba(192,132,252,0.65); }
+    .pog.r-legendary { border-color: var(--gold); box-shadow: 0 6px 14px rgba(0,0,0,0.5), 0 0 22px rgba(251,191,36,0.8); }
+    .pog.face-up.r-legendary { animation: legend 1.5s infinite; }
+    @keyframes legend { 0%,100%{ filter: brightness(1);} 50%{ filter: brightness(1.25);} }
 
-    .pog .pog-info {
-      position: absolute;
-      bottom: 4px;
-      width: 100%;
-      text-align: center;
-      font-size: 0.75em;
-      color: var(--text);
-      background: rgba(0, 0, 0, 0.4);
-      padding: 2px 0;
-      z-index: 2;
+    /* ---------- Power meter ---------- */
+    #control-zone { width: min(360px, 92%); display: flex; flex-direction: column; gap: 10px; align-items: center; }
+    #power-wrap {
+      width: 100%; height: 26px; border-radius: 999px; position: relative; overflow: hidden;
+      background: linear-gradient(90deg, #ef4444 0%, #f59e0b 45%, #10b981 78%, #fbbf24 90%, #fde047 100%);
+      border: 1px solid rgba(255,255,255,0.15); opacity: 0.35; transition: opacity .2s ease;
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.4);
     }
-
-    .pog.face-up {
-      border: 2px solid var(--accent);
+    #power-wrap.live { opacity: 1; }
+    #power-needle {
+      position: absolute; top: -2px; bottom: -2px; width: 5px; left: 0%;
+      background: #fff; border-radius: 3px; box-shadow: 0 0 10px #fff, 0 0 4px #fff;
     }
-
-    .pog.face-down img {
-      filter: brightness(1.0);
+    .perfect-label {
+      position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+      font-size: 0.55rem; font-weight: 900; color: rgba(0,0,0,0.6); letter-spacing: 0.5px;
     }
-
-    .pog.face-down .pog-info {
-      display: none;
-    }
-
-    .pog:hover {
-      transform: perspective(800px) rotateX(0deg) scale(1.2);
-      z-index: 999;
-    }
+    #power-hint { font-size: 0.74rem; color: var(--muted); min-height: 16px; }
 
     #slammer {
-      background: var(--accent);
-      color: #fff;
-      padding: 8px 16px;
-      margin: 10px auto 0;
-      border-radius: 8px;
-      cursor: pointer;
-      width: 100px;
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
-      user-select: none;
-      font-weight: bold;
-      border: none;
-      display: block;
+      width: 100%; padding: 16px; border: none; border-radius: 14px; cursor: pointer;
+      font-family:'Russo One'; font-size: 1.3rem; color: #fff; letter-spacing: 1px;
+      background: linear-gradient(135deg, var(--accent), #059669);
+      box-shadow: 0 10px 26px rgba(16,185,129,0.4); transition: transform .1s ease, filter .2s ease;
     }
+    #slammer:hover { filter: brightness(1.1); }
+    #slammer:active { transform: scale(0.97); }
+    #slammer.charging { background: linear-gradient(135deg, var(--gold), #d97706); animation: chargepulse .5s infinite; }
+    #slammer.waiting { background: var(--panel); color: var(--muted); cursor: default; box-shadow: none; }
+    @keyframes chargepulse { 0%,100%{ box-shadow: 0 10px 26px rgba(251,191,36,0.4);} 50%{ box-shadow: 0 10px 40px rgba(251,191,36,0.8);} }
 
-    #slammer:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    #restart-btn { display: none; width: min(360px, 92%); }
+
+    /* ---------- Game over modal ---------- */
+    #gameover-modal {
+      display: none; position: fixed; inset: 0; z-index: 3500;
+      background: rgba(5,4,15,0.82); backdrop-filter: blur(6px);
+      align-items: center; justify-content: center; padding: 20px;
     }
-
-    #slammer:active {
-      transform: scale(0.95);
+    #gameover-modal.show { display: flex; animation: fadein .3s ease; }
+    @keyframes fadein { from{ opacity:0;} to{ opacity:1;} }
+    .go-card {
+      width: min(460px, 94vw); background: linear-gradient(180deg, #1c1838, #14112a);
+      border: 1px solid var(--panel-bd); border-radius: 22px; padding: 28px; text-align: center;
+      box-shadow: 0 30px 90px rgba(0,0,0,0.7); animation: pop .4s cubic-bezier(.2,1.3,.4,1);
     }
+    @keyframes pop { from{ transform: scale(0.8); opacity:0;} to{ transform: scale(1); opacity:1;} }
+    .go-card h2 { font-family:'Russo One'; font-size: 2rem; margin-bottom: 6px; }
+    .go-card h2.win { color: var(--gold); text-shadow: 0 0 30px rgba(251,191,36,0.5); }
+    .go-card h2.lose { color: var(--muted); }
+    .go-card h2.tie { color: var(--accent-2); }
+    .go-score { font-family:'Russo One'; font-size: 1.6rem; margin: 12px 0; }
+    .go-deltas { display: flex; gap: 12px; justify-content: center; margin: 16px 0; flex-wrap: wrap; }
+    .delta-box { flex: 1; min-width: 120px; background: var(--panel); border:1px solid var(--panel-bd); border-radius: 12px; padding: 10px; }
+    .delta-box .lbl { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+    .delta-box .pogline { display: flex; flex-wrap: wrap; gap: 3px; justify-content: center; margin-top: 6px; min-height: 26px; }
+    .delta-box img { width: 26px; height: 26px; border-radius: 50%; }
+    .go-actions { display: flex; gap: 10px; margin-top: 8px; }
 
-    #message {
-      margin-top: 5px;
-      min-height: 20px;
-      font-weight: bold;
-      color: var(--text);
+    .toast {
+      position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: #1c1838; border: 1px solid var(--panel-bd); padding: 12px 18px; border-radius: 12px;
+      color: var(--text); font-weight: 600; z-index: 5000; opacity: 0; transition: all .3s ease; pointer-events: none;
     }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    #restart-btn {
-      margin-top: 10px;
-      padding: 8px 16px;
-      background: var(--primary);
-      border: none;
-      color: #fff;
-      border-radius: 8px;
-      cursor: pointer;
-      display: none;
-      font-weight: bold;
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
-    }
-
-    #restart-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(109, 40, 217, 0.3);
-    }
-
-    #results {
-      margin-top: 10px;
-      text-align: left;
-      font-size: 0.9em;
-      background: rgba(255, 255, 255, 0.05);
-      padding: 10px;
-      border-radius: 8px;
-      display: none;
-    }
-
-    #results h3 {
-      margin-bottom: 5px;
-      font-size: 1em;
-      color: var(--accent);
-    }
-
-    .results-section {
-      margin-bottom: 10px;
-    }
-
-    .results-section h4 {
-      font-size: 0.9em;
-      margin-bottom: 5px;
-      color: var(--accent);
-    }
-
-    .result-pog-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-    }
-
-    .result-pog-list img {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      vertical-align: middle;
+    .float-num {
+      position: fixed; z-index: 4500; font-family:'Russo One'; font-weight: 900; pointer-events: none;
+      color: var(--gold); text-shadow: 0 2px 10px rgba(0,0,0,0.6);
     }
   </style>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
-  <div id="lobby-overlay"
-    style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:2000; display:flex; justify-content:center; align-items:center; flex-direction:column; color:white; font-family: 'Inter', sans-serif;">
-    <h1 style="margin-bottom:20px; color:#10b981; font-size: 2.5rem; text-shadow: 0 2px 10px rgba(16, 185, 129, 0.3);">
-      Crypto Pogs Online</h1>
+  <canvas id="fx-canvas"></canvas>
 
-    <div
-      style="background:#1a1a2e; padding:40px; border-radius:16px; width: 400px; text-align:center; border: 1px solid #4c1d95; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+  <!-- ============================ LOBBY ============================ -->
+  <div id="lobby-overlay">
+    <div class="brand">
+      <h1 class="display-font">CRYPTO POGS</h1>
+      <p>Stack 'em · Slam 'em · Keep 'em</p>
+    </div>
 
-      <!-- Auth Section -->
-      <div id="auth-section">
-        <div style="display:flex; justify-content:center; gap:10px; margin-bottom:20px;">
+    <div class="lobby-card">
+      <div id="user-info-bar">
+        Welcome back, <span class="uname" id="user-display"></span>!
+        <div class="stat-row">
+          <span>🪙 Pogs: <b id="pog-count">0</b></span>
+          <span>🏆 <b id="win-count">0</b>W</span>
+          <span>💀 <b id="loss-count">0</b>L</span>
+          <span>♻️ Refills: <b id="refill-count">0</b></span>
+          <button id="refill-btn" class="btn amber small" style="display:none; margin-left:auto;">Refill Pogs</button>
+          <button id="logout-btn" class="btn red small">Logout</button>
+        </div>
+      </div>
+
+      <div id="lobby-content">
+        <div class="play-buttons">
+          <button id="single-player-btn" class="btn">🤖 Single Player</button>
+          <button id="create-room-btn" class="btn green" style="flex:0 0 auto; width:54px; font-size:1.6rem;">+</button>
+        </div>
+
+        <div class="section-title"><span class="dot"></span> Join an Active Game</div>
+        <div id="rooms-container">
+          <div class="empty-hint">Searching for games…</div>
+        </div>
+      </div>
+
+      <!-- Auth overlay -->
+      <div id="auth-overlay">
+        <button id="close-auth-btn">&times;</button>
+        <div class="tabs">
           <button id="show-login" class="tab-btn active">Login</button>
           <button id="show-register" class="tab-btn">Register</button>
         </div>
-
-        <div id="login-form">
-          <input type="text" id="login-username" placeholder="Username" class="auth-input">
-          <input type="password" id="login-password" placeholder="Password" class="auth-input">
-          <button id="login-btn" class="action-btn">Login</button>
-        </div>
-
-        <div id="register-form" style="display:none;">
-          <input type="text" id="reg-username" placeholder="Choose Username" class="auth-input">
-          <input type="password" id="reg-password" placeholder="Choose Password" class="auth-input">
-          <button id="register-btn" class="action-btn">Create Account</button>
-        </div>
+        <form id="login-form">
+          <input type="text" id="login-username" placeholder="Username" class="auth-input" autocomplete="username">
+          <input type="password" id="login-password" placeholder="Password" class="auth-input" autocomplete="current-password">
+          <button type="submit" class="btn">Login</button>
+        </form>
+        <form id="register-form" style="display:none;">
+          <input type="text" id="reg-username" placeholder="Choose a username" class="auth-input" autocomplete="username">
+          <input type="password" id="reg-password" placeholder="Choose a password" class="auth-input" autocomplete="new-password">
+          <button type="submit" class="btn green">Create Account</button>
+        </form>
       </div>
 
-      <!-- Logged In Lobby Section -->
-      <div id="lobby-section" style="display:none;">
-        <div style="margin-bottom:20px; color:#e5e7eb;">
-          Welcome, <span id="user-display" style="color:#10b981; font-weight:bold;"></span>!
-          <div style="font-size:0.9rem; margin-top:5px;">
-            Your Pogs: <span id="pog-count">0</span> | Refills: <span id="refill-count">0</span>
-          </div>
-          <button id="refill-btn"
-            style="display:none; margin-top:5px; padding:5px 10px; font-size:0.8rem; background:#f59e0b; border:none; border-radius:4px; cursor:pointer; color: #fff;">Get
-            Refill Pack!</button>
-        </div>
-
-        <!-- Room List Section -->
-        <div id="room-list-section" style="margin-bottom: 25px;">
-          <h3
-            style="color:#10b981; margin-bottom:15px; font-size:1.1rem; text-align:left; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom:10px;">
-            Join an Active Game</h3>
-          <div id="rooms-container"
-            style="display:flex; flex-direction:column; gap:10px; max-height: 200px; overflow-y: auto;">
-            <div style="color:#666; font-style:italic; padding: 10px;">Searching for games...</div>
-          </div>
-        </div>
-
-        <!-- Create/Manual Join Section -->
-        <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
-          <p style="color:#666; font-size: 0.9rem; margin-bottom: 10px;">Or create a new room:</p>
-          <div style="display:flex; gap:10px;">
-            <input type="text" id="room-input" placeholder="Room ID"
-              style="flex:1; padding:10px; border-radius:8px; border:2px solid #4c1d95; background: rgba(0,0,0,0.2); color:white; font-size:0.9rem;">
-            <button id="join-btn" class="action-btn" style="padding:10px 20px;">GO</button>
-          </div>
-        </div>
-      </div>
-
+      <div id="status-msg"></div>
     </div>
-    <div id="status-msg" style="margin-top:20px; color:#fba; min-height: 20px;"></div>
   </div>
 
-  <style>
-    .flying-pog {
-      position: fixed;
-      z-index: 3000;
-      transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-      pointer-events: none;
-      box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
-    }
-
-    .room-btn {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 15px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      border-radius: 8px;
-      color: #e5e7eb;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .room-btn:hover {
-      background: rgba(16, 185, 129, 0.1);
-      border-color: #10b981;
-      transform: translateX(2px);
-    }
-
-    .auth-input {
-      width: 100%;
-      padding: 12px;
-      border-radius: 8px;
-      border: 2px solid #4c1d95;
-      background: rgba(0, 0, 0, 0.2);
-      color: white;
-      font-size: 1rem;
-      outline: none;
-      margin-bottom: 10px;
-    }
-
-    .action-btn {
-      width: 100%;
-      padding: 12px;
-      background: #6d28d9;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;
-      transition: background 0.2s;
-    }
-
-    .action-btn:hover {
-      background: #5b21b6;
-    }
-
-    .tab-btn {
-      background: transparent;
-      border: none;
-      color: #666;
-      font-weight: bold;
-      cursor: pointer;
-      padding-bottom: 5px;
-    }
-
-    .tab-btn.active {
-      color: #10b981;
-      border-bottom: 2px solid #10b981;
-    }
-  </style>
-
-
+  <!-- ============================ GAME ============================ -->
   <div id="container">
-    <div id="player1-side">
-      <h2 id="p1-name">Player 1</h2>
-      <h3>Contributed</h3>
-      <div class="side-pogs" id="p1-contributed"></div>
-      <h3>Collected</h3>
-      <div class="side-pogs" id="p1-collected"></div>
+    <div id="topbar">
+      <div class="logo display-font">CRYPTO POGS</div>
+      <div style="display:flex; gap:8px;">
+        <button id="sound-btn" class="icon-btn" title="Toggle sound">🔊</button>
+        <button id="leave-btn" class="icon-btn" title="Leave game">🚪</button>
+      </div>
     </div>
 
-    <div id="game">
-      <h1>Crypto Pogs</h1>
-      <div id="scoreboard">
-        <div class="player-score">
-          <h2 id="p1-score-name">P1</h2>
-          <div class="score" id="p1-score">0</div>
-        </div>
-        <div class="player-score">
-          <h2 id="p2-score-name">P2</h2>
-          <div class="score" id="p2-score">0</div>
-        </div>
+    <div id="scoreboard">
+      <div class="pscore p1" id="p1-card">
+        <div class="pname" id="p1-name">Player 1</div>
+        <div class="pnum" id="p1-score">0</div>
+      </div>
+      <div class="vs">VS</div>
+      <div class="pscore p2" id="p2-card">
+        <div class="pname" id="p2-name">Player 2</div>
+        <div class="pnum" id="p2-score">0</div>
+      </div>
+    </div>
+
+    <div id="turn-banner">Waiting…</div>
+
+    <div id="board">
+      <div class="side-panel" id="p1-panel">
+        <div class="who" style="color:var(--accent)" id="p1-side-name">Player 1</div>
+        <h3>Contributed</h3>
+        <div class="side-pogs" id="p1-contributed"></div>
+        <h3>Collected</h3>
+        <div class="side-pogs" id="p1-collected"></div>
       </div>
 
-      <div id="play-area">
+      <div id="game-col">
         <div id="stack-area">
+          <div id="stack-shadow"></div>
           <div id="stack"></div>
         </div>
-        <button id="slammer" style="display:none;">Slam!</button>
-        <div id="message">Waiting for players...</div>
+
+        <div id="control-zone">
+          <div id="power-wrap">
+            <div id="power-needle"></div>
+            <div class="perfect-label">PERFECT</div>
+          </div>
+          <div id="power-hint">Tap SLAM to charge your throw</div>
+          <button id="slammer">SLAM!</button>
+        </div>
+        <button id="restart-btn" class="btn">Rematch</button>
       </div>
 
-      <button id="restart-btn">Restart Game</button>
-
-      <div id="results"></div>
-    </div>
-
-    <div id="player2-side">
-      <h2 id="p2-name">Player 2</h2>
-      <h3>Contributed</h3>
-      <div class="side-pogs" id="p2-contributed"></div>
-      <h3>Collected</h3>
-      <div class="side-pogs" id="p2-collected"></div>
+      <div class="side-panel" id="p2-panel">
+        <div class="who" style="color:var(--accent-2)" id="p2-side-name">Player 2</div>
+        <h3>Contributed</h3>
+        <div class="side-pogs" id="p2-contributed"></div>
+        <h3>Collected</h3>
+        <div class="side-pogs" id="p2-collected"></div>
+      </div>
     </div>
   </div>
+
+  <!-- Game over modal -->
+  <div id="gameover-modal">
+    <div class="go-card">
+      <h2 id="go-title">Game Over</h2>
+      <div class="go-score" id="go-score">0 — 0</div>
+      <div class="go-deltas">
+        <div class="delta-box">
+          <div class="lbl" style="color:var(--accent)">+ Gained</div>
+          <div class="pogline" id="go-gained"></div>
+        </div>
+        <div class="delta-box">
+          <div class="lbl" style="color:var(--danger)">- Lost</div>
+          <div class="pogline" id="go-lost"></div>
+        </div>
+      </div>
+      <div class="go-actions">
+        <button id="go-rematch" class="btn green">Rematch</button>
+        <button id="go-lobby" class="btn ghost">Lobby</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
 
-    // UI Elements
-    const lobbyOverlay = document.getElementById('lobby-overlay');
-    const joinBtn = document.getElementById('join-btn');
-    const roomInput = document.getElementById('room-input');
-    const statusMsg = document.getElementById('status-msg');
-    const roomsContainer = document.getElementById('rooms-container');
+    /* ----------------- Element refs ----------------- */
+    const $ = id => document.getElementById(id);
+    const lobbyOverlay = $('lobby-overlay');
+    const container = $('container');
+    const statusMsg = $('status-msg');
+    const roomsContainer = $('rooms-container');
+    const authOverlay = $('auth-overlay');
+    const userInfoBar = $('user-info-bar');
 
-    // Auth UI
-    const authSection = document.getElementById('auth-section');
-    const lobbySection = document.getElementById('lobby-section');
-    const loginForm = document.getElementById('login-form');
-    const regForm = document.getElementById('register-form');
-    const showLoginBtn = document.getElementById('show-login');
-    const showRegBtn = document.getElementById('show-register');
+    const p1Card = $('p1-card'), p2Card = $('p2-card');
+    const p1NameEl = $('p1-name'), p2NameEl = $('p2-name');
+    const p1SideName = $('p1-side-name'), p2SideName = $('p2-side-name');
+    const p1ScoreEl = $('p1-score'), p2ScoreEl = $('p2-score');
+    const turnBanner = $('turn-banner');
+    const stackEl = $('stack');
+    const slammerEl = $('slammer');
+    const powerWrap = $('power-wrap'), powerNeedle = $('power-needle'), powerHint = $('power-hint');
+    const restartBtn = $('restart-btn');
+    const p1Contributed = $('p1-contributed'), p2Contributed = $('p2-contributed');
+    const p1Collected = $('p1-collected'), p2Collected = $('p2-collected');
 
-    const userDisplay = document.getElementById('user-display');
-    const pogCountEl = document.getElementById('pog-count');
-    const refillCountEl = document.getElementById('refill-count');
-    const refillBtn = document.getElementById('refill-btn');
-
-    document.getElementById('login-btn').addEventListener('click', () => {
-      const user = document.getElementById('login-username').value;
-      const pass = document.getElementById('login-password').value;
-      socket.emit('login', { username: user, password: pass });
-    });
-
-    document.getElementById('register-btn').addEventListener('click', () => {
-      const user = document.getElementById('reg-username').value;
-      const pass = document.getElementById('reg-password').value;
-      socket.emit('register', { username: user, password: pass });
-    });
-
-    showLoginBtn.addEventListener('click', () => {
-      loginForm.style.display = 'block';
-      regForm.style.display = 'none';
-      showLoginBtn.classList.add('active');
-      showRegBtn.classList.remove('active');
-    });
-
-    showRegBtn.addEventListener('click', () => {
-      loginForm.style.display = 'none';
-      regForm.style.display = 'block';
-      showLoginBtn.classList.remove('active');
-      showRegBtn.classList.add('active');
-    });
-
-    refillBtn.addEventListener('click', () => {
-      if (confirm("Refill your pogs? This will be tracked.")) {
-        socket.emit('refill');
-      }
-    });
-
-    const p1NameEl = document.getElementById('p1-name');
-
-    const p2NameEl = document.getElementById('p2-name');
-    const p1ScoreNameEl = document.getElementById('p1-score-name');
-    const p2ScoreNameEl = document.getElementById('p2-score-name');
-
-    const stackEl = document.getElementById('stack');
-    const p1ScoreEl = document.getElementById('p1-score');
-    const p2ScoreEl = document.getElementById('p2-score');
-    const slammerEl = document.getElementById('slammer');
-    const messageEl = document.getElementById('message');
-    const restartBtn = document.getElementById('restart-btn');
-    const resultsEl = document.getElementById('results');
-
-    const p1ContributedEl = document.getElementById('p1-contributed');
-    const p2ContributedEl = document.getElementById('p2-contributed');
-    const p1CollectedEl = document.getElementById('p1-collected');
-    const p2CollectedEl = document.getElementById('p2-collected');
-
-    let myPlayerNum = 0; // 1 or 2
+    /* ----------------- State ----------------- */
+    let currentUser = null;
+    let pendingAction = null;
+    let isGameActive = false;
+    let myPlayerNum = 0;
     let currentRoomId = "";
     let isAnimating = false;
     let pendingState = null;
-    let currentUser = null;
 
-    // --- Auth Logic ---
-    socket.on('authSuccess', (userData) => {
-      currentUser = userData;
-      authSection.style.display = 'none';
-      lobbySection.style.display = 'block';
-      updateUserInfo();
-      socket.emit('getRooms');
+    // power meter state
+    let charging = false;
+    let powerValue = 0;
+    let powerDir = 1;
+    let powerRAF = null;
+    let myTurn = false;
+
+    /* ===================== SOUND (WebAudio) ===================== */
+    let audioCtx = null, soundOn = true;
+    function ac() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
+    function tone(freq, dur, type = 'sine', vol = 0.2, delay = 0) {
+      if (!soundOn) return;
+      try {
+        const c = ac(); const t = c.currentTime + delay;
+        const osc = c.createOscillator(), g = c.createGain();
+        osc.type = type; osc.frequency.setValueAtTime(freq, t);
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(vol, t + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+        osc.connect(g); g.connect(c.destination);
+        osc.start(t); osc.stop(t + dur + 0.02);
+      } catch (e) {}
+    }
+    const sfx = {
+      charge() { tone(180, 0.08, 'square', 0.05); },
+      slam() { tone(70, 0.18, 'square', 0.35); tone(120, 0.12, 'triangle', 0.2); },
+      collect(i = 0) { tone(520 + i * 90, 0.14, 'sine', 0.18, i * 0.05); },
+      perfect() { [660, 880, 1100, 1320].forEach((f, i) => tone(f, 0.16, 'triangle', 0.22, i * 0.06)); },
+      win() { [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 0.3, 'sawtooth', 0.18, i * 0.12)); },
+      lose() { [400, 330, 262, 196].forEach((f, i) => tone(f, 0.25, 'sine', 0.18, i * 0.12)); },
+      whiff() { tone(160, 0.2, 'sine', 0.15); }
+    };
+    $('sound-btn').addEventListener('click', () => {
+      soundOn = !soundOn;
+      $('sound-btn').textContent = soundOn ? '🔊' : '🔇';
+      if (soundOn) tone(660, 0.1, 'sine', 0.2);
     });
 
-    socket.on('authError', (msg) => {
-      statusMsg.textContent = msg;
-    });
+    /* ===================== PARTICLES ===================== */
+    const canvas = $('fx-canvas'), ctx = canvas.getContext('2d');
+    let particles = [];
+    function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    resizeCanvas(); window.addEventListener('resize', resizeCanvas);
 
-    socket.on('inventoryUpdate', (data) => {
-      if (currentUser) {
-        currentUser.pogs = data.pogs;
-        if (data.refillCount !== undefined) currentUser.refillCount = data.refillCount;
-        updateUserInfo();
+    function burst(x, y, colors, count = 24, power = 1) {
+      for (let i = 0; i < count; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const sp = (2 + Math.random() * 7) * power;
+        particles.push({
+          x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 2,
+          life: 1, size: 3 + Math.random() * 5,
+          color: colors[(Math.random() * colors.length) | 0],
+          rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.4
+        });
       }
+    }
+    function confettiRain() {
+      const cols = ['#10b981', '#06b6d4', '#7c3aed', '#fbbf24', '#ef4444', '#fff'];
+      for (let i = 0; i < 140; i++) {
+        particles.push({
+          x: Math.random() * canvas.width, y: -20 - Math.random() * canvas.height * 0.5,
+          vx: (Math.random() - 0.5) * 3, vy: 2 + Math.random() * 4,
+          life: 1, decay: 0.004 + Math.random() * 0.004,
+          size: 5 + Math.random() * 6, color: cols[(Math.random() * cols.length) | 0],
+          rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3, rect: true
+        });
+      }
+    }
+    function fxLoop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles = particles.filter(p => p.life > 0);
+      for (const p of particles) {
+        p.x += p.vx; p.y += p.vy; p.vy += 0.18; p.vx *= 0.99;
+        p.life -= (p.decay || 0.02); p.rot += p.vr;
+        ctx.save(); ctx.globalAlpha = Math.max(0, p.life); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+        ctx.fillStyle = p.color;
+        if (p.rect) ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+        else { ctx.beginPath(); ctx.arc(0, 0, p.size, 0, Math.PI * 2); ctx.fill(); }
+        ctx.restore();
+      }
+      requestAnimationFrame(fxLoop);
+    }
+    fxLoop();
+
+    function floatNumber(x, y, text, color) {
+      const el = document.createElement('div');
+      el.className = 'float-num'; el.textContent = text;
+      el.style.left = x + 'px'; el.style.top = y + 'px';
+      el.style.color = color || '#fbbf24'; el.style.fontSize = '1.8rem';
+      document.body.appendChild(el);
+      el.animate([
+        { transform: 'translateY(0) scale(0.6)', opacity: 0 },
+        { transform: 'translateY(-30px) scale(1.4)', opacity: 1, offset: 0.3 },
+        { transform: 'translateY(-90px) scale(1)', opacity: 0 }
+      ], { duration: 1100, easing: 'cubic-bezier(.2,1,.3,1)' });
+      setTimeout(() => el.remove(), 1100);
+    }
+
+    function shake(intensity = 1) {
+      const el = container;
+      el.animate([
+        { transform: 'translate(0,0)' },
+        { transform: `translate(${6 * intensity}px, ${-4 * intensity}px)` },
+        { transform: `translate(${-5 * intensity}px, ${5 * intensity}px)` },
+        { transform: `translate(${4 * intensity}px, ${2 * intensity}px)` },
+        { transform: 'translate(0,0)' }
+      ], { duration: 280, easing: 'ease-out' });
+    }
+
+    function toast(msg, ms = 2200) {
+      const t = $('toast'); t.textContent = msg; t.classList.add('show');
+      clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), ms);
+    }
+
+    /* ===================== AUTH / LOBBY ===================== */
+    socket.emit('getRooms');
+
+    function requireAuth(action) {
+      if (currentUser) action();
+      else {
+        pendingAction = action;
+        authOverlay.style.display = 'block';
+        $('login-username').focus();
+        statusMsg.textContent = 'Login or register to play';
+      }
+    }
+
+    $('single-player-btn').addEventListener('click', () => requireAuth(() => {
+      ac(); socket.emit('startPvC'); statusMsg.textContent = 'Starting…';
+    }));
+    $('create-room-btn').addEventListener('click', () => requireAuth(() => {
+      const roomId = prompt("Name your arena (e.g. 'satoshi-slam'):");
+      if (roomId) { currentRoomId = roomId.trim(); ac(); socket.emit('joinRoom', currentRoomId); statusMsg.textContent = 'Creating room…'; }
+    }));
+    $('close-auth-btn').addEventListener('click', () => { authOverlay.style.display = 'none'; pendingAction = null; statusMsg.textContent = ''; });
+
+    $('login-form').addEventListener('submit', e => {
+      e.preventDefault();
+      socket.emit('login', { username: $('login-username').value, password: $('login-password').value });
+    });
+    $('register-form').addEventListener('submit', e => {
+      e.preventDefault();
+      socket.emit('register', { username: $('reg-username').value, password: $('reg-password').value });
+    });
+    $('logout-btn').addEventListener('click', () => location.reload());
+    $('show-login').addEventListener('click', () => { $('login-form').style.display = 'block'; $('register-form').style.display = 'none'; $('show-login').classList.add('active'); $('show-register').classList.remove('active'); });
+    $('show-register').addEventListener('click', () => { $('login-form').style.display = 'none'; $('register-form').style.display = 'block'; $('show-login').classList.remove('active'); $('show-register').classList.add('active'); });
+    $('refill-btn').addEventListener('click', () => { if (confirm('Refill to a fresh set of 12 pogs?')) socket.emit('refill'); });
+
+    socket.on('authSuccess', userData => {
+      currentUser = userData;
+      authOverlay.style.display = 'none';
+      updateUserInfo();
+      statusMsg.textContent = 'Logged in!';
+      if (pendingAction) { pendingAction(); pendingAction = null; }
+    });
+    socket.on('authError', msg => { statusMsg.textContent = msg; });
+    socket.on('inventoryUpdate', data => {
+      if (!currentUser) return;
+      currentUser.pogs = data.pogs;
+      if (data.refillCount !== undefined) currentUser.refillCount = data.refillCount;
+      if (data.wins !== undefined) currentUser.wins = data.wins;
+      if (data.losses !== undefined) currentUser.losses = data.losses;
+      updateUserInfo();
     });
 
     function updateUserInfo() {
-      userDisplay.textContent = currentUser.username;
-
-      // Check real pog count
-      // Inventory is list of IDs
-      pogCountEl.textContent = currentUser.pogs.length;
-      refillCountEl.textContent = currentUser.refillCount;
-
-      if (currentUser.pogs.length < 6) {
-        refillBtn.style.display = 'inline-block';
-        statusMsg.textContent = "You need at least 6 pogs to play!";
-      } else {
-        refillBtn.style.display = 'none';
-        statusMsg.textContent = "";
-      }
+      userInfoBar.style.display = 'block';
+      $('user-display').textContent = currentUser.username;
+      $('pog-count').textContent = currentUser.pogs.length;
+      $('win-count').textContent = currentUser.wins || 0;
+      $('loss-count').textContent = currentUser.losses || 0;
+      $('refill-count').textContent = currentUser.refillCount || 0;
+      $('refill-btn').style.display = currentUser.pogs.length < 6 ? 'inline-flex' : 'none';
+      if (currentUser.pogs.length < 6) statusMsg.textContent = 'You need at least 6 pogs — hit Refill!';
     }
 
-    // --- Lobby Logic ---
-    // Removed auto getRooms on load, wait for login
-
-    socket.on('roomList', (rooms) => {
+    socket.on('roomList', rooms => {
       roomsContainer.innerHTML = '';
-      if (rooms.length === 0) {
-        roomsContainer.innerHTML = '<div style="color:#666; padding:10px; font-size:0.9rem;">No active games found.<br>Create one below!</div>';
-      } else {
-        rooms.forEach(r => {
-          const btn = document.createElement('div');
-          btn.className = 'room-btn';
-          btn.innerHTML = `<span><strong>${r.id}</strong></span> <span style="font-size:0.8rem; background:rgba(255,255,255,0.1); padding:2px 8px; border-radius:12px;">${r.playerCount}/2 Players</span>`;
-          btn.onclick = () => {
-            roomInput.value = r.id;
-            joinBtn.click();
-          };
-          roomsContainer.appendChild(btn);
-        });
-      }
-    });
-
-    joinBtn.addEventListener('click', () => {
-      if (!currentUser) return;
-      const room = roomInput.value.trim();
-      if (!room) {
-        statusMsg.textContent = "Please enter or select a Room ID";
+      if (!rooms.length) {
+        roomsContainer.innerHTML = '<div class="empty-hint">No open games. Hit + to start one!</div>';
         return;
       }
-      if (currentUser.pogs.length < 6) {
-        statusMsg.textContent = "Not enough pogs! Use Refill.";
-        return;
-      }
-
-      currentRoomId = room;
-      socket.emit('joinRoom', room); // No name needed, server knows user
-      statusMsg.textContent = "Joining...";
-    });
-
-    // Removed localstorage name logic since we use auth now
-
-    socket.on('errorMsg', (msg) => {
-      statusMsg.textContent = msg;
-      setTimeout(() => statusMsg.textContent = "", 3000);
-    });
-
-    socket.on('updateRoom', (data) => {
-      // data.players contains list of players
-      // data.state is 'waiting' or 'playing'
-      isGameActive = (data.state === 'playing');
-      const players = data.players;
-      const me = players.find(p => p.id === socket.id);
-      if (me) {
-        myPlayerNum = me.num;
-        lobbyOverlay.style.display = 'none'; // connected!
-      } else {
-        // I am not in the list? Maybe spectator
-      }
-
-      updatePlayerNames(players);
-
-      if (data.state === 'waiting') {
-        if (players.length < 2) {
-          messageEl.textContent = "Waiting for Player 2...";
-          slammerEl.style.display = 'none';
-        } else {
-          messageEl.textContent = "Ready to start...";
-        }
-      }
-    });
-
-    socket.on('gameStart', (gameState) => {
-      isGameActive = true;
-
-      // If results are showing and local player didn't trigger restart
-      if (resultsEl.style.display === 'block' && !localActionTaken) {
-        restartBtn.textContent = "Join Match";
-        restartBtn.style.display = 'inline-block';
-      } else {
-        resultsEl.style.display = 'none';
-        restartBtn.style.display = 'none';
-      }
-
-      localActionTaken = false;
-      slammerEl.style.display = 'none'; // Hide until state says it's my turn
-
-      renderGameState(gameState);
-    });
-
-    socket.on('gameStateUpdate', (gameState) => {
-      if (isAnimating) {
-        pendingState = gameState;
-      } else {
-        renderGameState(gameState);
-      }
-    });
-
-    socket.on('slamResult', (result) => {
-      // Animate slammer?
-      const slammerName = (result.slammer === 1) ? p1NameEl.textContent : p2NameEl.textContent;
-      messageEl.textContent = `${slammerName} Slammed! ${result.flippedCount} collected.`;
-
-      slammerEl.style.transform = 'translateY(5px)';
-      setTimeout(() => {
-        slammerEl.style.transform = 'translateY(0)';
-      }, 150);
-
-      // Animate Flying Pogs if any collected
-      if (result.flippedCount > 0) {
-        animateCollection(result.flippedPogs, result.slammer);
-      }
-    });
-
-    function animateCollection(flippedPogs, collectorNum) {
-      isAnimating = true;
-
-      // Identify target container
-      const targetContainer = (collectorNum === 1) ? p1CollectedEl : p2CollectedEl;
-      const targetRect = targetContainer.getBoundingClientRect();
-      const targetX = targetRect.left + targetRect.width / 2;
-      const targetY = targetRect.top + targetRect.height / 2;
-
-      let completedAnim = 0;
-      const totalAnim = flippedPogs.length;
-
-      flippedPogs.forEach(pogData => {
-        // Find Element in stack
-        const stackPog = document.querySelector(`.pog[data-id="${pogData.id}"]`);
-        if (stackPog) {
-          // 1. Get coords
-          const rect = stackPog.getBoundingClientRect();
-
-          // 2. Clone it for animation
-          const flyingPog = stackPog.cloneNode(true);
-          flyingPog.classList.add('flying-pog');
-
-          // Force face up style instantly on clone
-          flyingPog.classList.remove('face-down');
-          flyingPog.classList.add('face-up');
-
-          // Set initial position
-          flyingPog.style.top = rect.top + 'px';
-          flyingPog.style.left = rect.left + 'px';
-          flyingPog.style.transform = 'scale(1) rotate(0deg)';
-
-          // Append to body to fly freely
-          document.body.appendChild(flyingPog);
-
-          // Hide original
-          stackPog.style.opacity = '0';
-
-          // 3. Trigger Flip & Fly (next Tick)
-          requestAnimationFrame(() => {
-            flyingPog.style.top = (targetY - 30) + 'px'; // -30 for half size roughly
-            flyingPog.style.left = (targetX - 30) + 'px';
-            flyingPog.style.transform = 'scale(0.5) rotate(720deg)'; // Spin and shrink
-            flyingPog.style.opacity = '0'; // Fade out at end
-          });
-
-          // 4. Cleanup
-          setTimeout(() => {
-            flyingPog.remove();
-            completedAnim++;
-            if (completedAnim === totalAnim) {
-              isAnimating = false;
-              if (pendingState) {
-                renderGameState(pendingState);
-                pendingState = null;
-              }
-            }
-          }, 800); // Match transition duration
-        } else {
-          // Fallback if element not found
-          completedAnim++;
-        }
+      rooms.forEach(r => {
+        const btn = document.createElement('div');
+        btn.className = 'room-btn';
+        btn.innerHTML = `<span><strong>${r.id}</strong></span><span class="pill">${r.playerCount}/2</span>`;
+        btn.onclick = () => requireAuth(() => { currentRoomId = r.id; ac(); socket.emit('joinRoom', r.id); statusMsg.textContent = 'Joining ' + r.id + '…'; });
+        roomsContainer.appendChild(btn);
       });
+    });
 
-      // Safety fallback if loop doesn't run or pogs not found
-      if (totalAnim === 0) {
-        isAnimating = false;
-        if (pendingState) {
-          renderGameState(pendingState);
-          pendingState = null;
-        }
+    socket.on('errorMsg', msg => { statusMsg.textContent = msg; toast(msg); });
+
+    /* ===================== GAME EVENTS ===================== */
+    function enterGame() { lobbyOverlay.style.display = 'none'; container.classList.add('active'); }
+
+    socket.on('updateRoom', data => {
+      isGameActive = (data.state === 'playing');
+      const me = data.players.find(p => p.id === socket.id);
+      if (me) { myPlayerNum = me.num; enterGame(); if (data.id) currentRoomId = data.id; }
+      updatePlayerNames(data.players);
+      if (data.state === 'waiting') {
+        turnBanner.textContent = data.players.length < 2 ? 'Waiting for an opponent…' : 'Ready!';
+        setSlamMode('waiting');
+      }
+    });
+
+    socket.on('gameStart', state => {
+      isGameActive = true;
+      hideGameOver();
+      const me = state.players.find(p => p.id === socket.id);
+      if (me) myPlayerNum = me.num;
+      if (state.id) currentRoomId = state.id;
+      enterGame();
+      restartBtn.style.display = 'none';
+      updatePlayerNames(state.players);
+      renderGameState(state);
+      toast('Match started — good luck!');
+    });
+
+    socket.on('gameStateUpdate', state => {
+      if (isAnimating) pendingState = state;
+      else renderGameState(state);
+    });
+
+    socket.on('slamResult', result => {
+      const slammerName = result.slammer === 1 ? p1NameEl.textContent : p2NameEl.textContent;
+      sfx.slam();
+      shake(result.perfect ? 1.6 : (result.flippedCount > 0 ? 1 : 0.5));
+
+      const rect = stackEl.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+
+      if (result.flippedCount > 0) {
+        const color = result.slammer === 1 ? ['#10b981', '#34d399', '#fff'] : ['#06b6d4', '#22d3ee', '#fff'];
+        burst(cx, cy, color, result.perfect ? 40 : 20, result.perfect ? 1.5 : 1);
+        floatNumber(cx, cy - 30, '+' + result.flippedCount, result.perfect ? '#fbbf24' : '#10b981');
+        if (result.perfect) { sfx.perfect(); toast('💥 PERFECT SLAM!'); burst(cx, cy, ['#fbbf24', '#fde047', '#fff'], 30, 1.8); }
+        else result.flippedPogs.forEach((_, i) => sfx.collect(i));
+        turnBanner.textContent = `${slammerName} slammed ${result.flippedCount}!`;
+        animateCollection(result.flippedPogs, result.slammer);
+      } else {
+        sfx.whiff();
+        turnBanner.textContent = `${slammerName} whiffed! 0 flipped.`;
+        floatNumber(cx, cy - 30, 'MISS', '#8b8ba7');
+      }
+    });
+
+    socket.on('gameOver', data => {
+      renderGameState(data.finalState);
+      isGameActive = false;
+      showGameOver(data);
+    });
+
+    socket.on('playerLeft', () => { turnBanner.textContent = 'Opponent left the game.'; setSlamMode('waiting'); isGameActive = false; toast('Opponent disconnected'); });
+
+    /* ===================== POWER METER & SLAM ===================== */
+    function setSlamMode(mode) {
+      // mode: 'ready' | 'waiting' | 'charging'
+      slammerEl.className = '';
+      if (mode === 'ready') {
+        slammerEl.classList.remove('waiting');
+        slammerEl.textContent = 'SLAM!';
+        slammerEl.disabled = false;
+        powerHint.textContent = 'Tap SLAM to charge your throw';
+      } else if (mode === 'waiting') {
+        slammerEl.classList.add('waiting');
+        slammerEl.textContent = "Opponent's turn…";
+        slammerEl.disabled = true;
+        powerHint.textContent = '';
+        stopCharging();
+      } else if (mode === 'charging') {
+        slammerEl.classList.add('charging');
+        slammerEl.textContent = 'LOCK IT! 🎯';
+        powerHint.textContent = 'Tap again — aim for the gold PERFECT zone!';
       }
     }
 
+    function startCharging() {
+      charging = true;
+      powerValue = 0; powerDir = 1;
+      powerWrap.classList.add('live');
+      setSlamMode('charging');
+      sfx.charge();
+      const step = () => {
+        powerValue += powerDir * 2.6;
+        if (powerValue >= 100) { powerValue = 100; powerDir = -1; }
+        if (powerValue <= 0) { powerValue = 0; powerDir = 1; }
+        powerNeedle.style.left = powerValue + '%';
+        powerRAF = requestAnimationFrame(step);
+      };
+      powerRAF = requestAnimationFrame(step);
+    }
 
-    let localActionTaken = false;
-    let isGameActive = false;
+    function stopCharging() {
+      charging = false;
+      if (powerRAF) cancelAnimationFrame(powerRAF);
+      powerRAF = null;
+      powerWrap.classList.remove('live');
+    }
 
-    socket.on('gameOver', (data) => {
-      renderGameState(data.finalState);
+    function lockAndSlam() {
+      const power = Math.round(powerValue);
+      stopCharging();
+      slammerEl.classList.remove('charging');
+      slammerEl.textContent = '💥';
+      slammerEl.disabled = true;
+      myTurn = false;
+      socket.emit('slam', { roomId: currentRoomId, power });
+    }
 
-      let winnerText = "";
-      if (data.winner === 0) winnerText = "It's a tie!";
-      else if (data.winner === 1) winnerText = `${p1NameEl.textContent} Wins!`;
-      else if (data.winner === 2) winnerText = `${p2NameEl.textContent} Wins!`;
-
-      messageEl.textContent = `GAME OVER. ${winnerText}`;
-      slammerEl.style.display = 'none';
-      restartBtn.textContent = "Restart Game";
-      restartBtn.style.display = 'inline-block';
-      isGameActive = false;
-
-      showResults(data.finalState, data.winner);
-    });
-
-    socket.on('playerLeft', (id) => {
-      messageEl.textContent = "A player disconnected.";
-      slammerEl.style.display = 'none';
-      isGameActive = false;
-    });
-
-    // --- Game Inputs ---
     slammerEl.addEventListener('click', () => {
-      resultsEl.style.display = 'none';
-      restartBtn.style.display = 'none';
-      socket.emit('slam', currentRoomId);
+      if (!myTurn || slammerEl.disabled) return;
+      ac();
+      if (!charging) startCharging();
+      else lockAndSlam();
     });
 
-    restartBtn.addEventListener('click', () => {
-      if (isGameActive) {
-        // Game already running, just dismiss results
-        resultsEl.style.display = 'none';
-        restartBtn.style.display = 'none';
-      } else {
-        socket.emit('restartGame', currentRoomId);
-        localActionTaken = true;
-        // User requested immediate clear
-        resultsEl.style.display = 'none';
-        restartBtn.style.display = 'none';
-      }
-    });
+    restartBtn.addEventListener('click', () => { socket.emit('restartGame', currentRoomId); restartBtn.style.display = 'none'; });
+    $('leave-btn').addEventListener('click', () => location.reload());
 
-    // --- Rendering ---
+    /* ===================== RENDER ===================== */
     function updatePlayerNames(players) {
-      const p1 = players.find(p => p.num === 1);
-      const p2 = players.find(p => p.num === 2);
-
-      if (p1) {
-        p1NameEl.textContent = p1.name;
-        p1ScoreNameEl.textContent = p1.name;
-      }
-      if (p2) {
-        p2NameEl.textContent = p2.name;
-        p2ScoreNameEl.textContent = p2.name;
-      }
+      const p1 = players.find(p => p.num === 1), p2 = players.find(p => p.num === 2);
+      if (p1) { p1NameEl.textContent = p1.name; p1SideName.textContent = p1.name; }
+      if (p2) { p2NameEl.textContent = p2.name; p2SideName.textContent = p2.name; }
     }
 
     function renderGameState(state) {
-      // Update Scores
       p1ScoreEl.textContent = state.p1Score;
       p2ScoreEl.textContent = state.p2Score;
 
-      // Turn Handling
-      const currentTurnPlayer = state.players[state.turnIndex];
-      if (currentTurnPlayer) {
-        const isMyTurn = (currentTurnPlayer.num === myPlayerNum);
-        messageEl.textContent = isMyTurn ? "Your Turn!" : `${currentTurnPlayer.name}'s Turn`;
+      const cur = state.players[state.turnIndex];
+      p1Card.classList.toggle('active-turn', cur && cur.num === 1);
+      p2Card.classList.toggle('active-turn', cur && cur.num === 2);
 
-        if (isMyTurn) {
-          slammerEl.style.display = 'inline-block';
-          slammerEl.disabled = false;
-          slammerEl.style.opacity = 1;
+      if (cur) {
+        myTurn = (cur.num === myPlayerNum) && isGameActive;
+        if (myTurn) {
+          turnBanner.textContent = '🎯 Your turn — SLAM!';
+          turnBanner.style.color = 'var(--accent)';
+          setSlamMode('ready');
         } else {
-          slammerEl.style.display = 'inline-block';
-          slammerEl.disabled = true;
-          slammerEl.style.opacity = 0.5;
+          turnBanner.textContent = `${cur.name}'s turn`;
+          turnBanner.style.color = 'var(--muted)';
+          setSlamMode('waiting');
         }
       }
 
-      // Render Stack
       renderStack(state.pogs);
-
-      // Render Collections and Contributions
-      renderCollection(p1CollectedEl, state.p1Collected);
-      renderCollection(p2CollectedEl, state.p2Collected);
-
-      // Contributions (static usually, but good to re-render)
-      const p1Orig = state.originalPogs.filter(p => p.owner === 1);
-      const p2Orig = state.originalPogs.filter(p => p.owner === 2);
-      renderCollection(p1ContributedEl, p1Orig);
-      renderCollection(p2ContributedEl, p2Orig);
+      renderRow(p1Collected, state.p1Collected);
+      renderRow(p2Collected, state.p2Collected);
+      renderRow(p1Contributed, state.originalPogs.filter(p => p.owner === 1));
+      renderRow(p2Contributed, state.originalPogs.filter(p => p.owner === 2));
     }
 
     function renderStack(pogs) {
       stackEl.innerHTML = '';
-      let verticalOffset = 0;
+      let offset = 6;
       for (let i = 0; i < pogs.length; i++) {
         const pog = pogs[i];
-        const pogEl = document.createElement('div');
-        pogEl.classList.add('pog');
-        pogEl.dataset.id = pog.id; // CRITICAL for animation
-
-
-        const imgEl = document.createElement('img');
-        imgEl.src = pog.coin.image;
-        imgEl.alt = pog.coin.name;
-        pogEl.appendChild(imgEl);
-
+        const el = document.createElement('div');
+        el.className = 'pog ' + (pog.faceUp ? 'face-up' : 'face-down') + ' r-' + (pog.coin.rarity || 'common');
+        el.dataset.id = pog.id;
+        const img = document.createElement('img');
+        img.src = pog.coin.image; img.alt = pog.coin.name;
+        img.onerror = () => { img.style.visibility = 'hidden'; };
+        el.appendChild(img);
         if (pog.faceUp) {
-          pogEl.classList.add('face-up');
-          const infoEl = document.createElement('div');
-          infoEl.className = 'pog-info';
-          infoEl.textContent = pog.coin.symbol.toUpperCase();
-          pogEl.appendChild(infoEl);
-        } else {
-          pogEl.classList.add('face-down');
+          const sym = document.createElement('div');
+          sym.className = 'sym'; sym.textContent = pog.coin.symbol.toUpperCase();
+          el.appendChild(sym);
         }
-
-        // Pseudo-random rotation seeded by ID or something consistent if possible
-        // For now, random is fine as it re-renders on every state update
-        // But to avoid jitter, we might want to store rotation in state?
-        // Let's just use a simple hash of ID for rotation to keep it stable per pog
-        const rot = (pog.id * 137) % 360;
-
-        pogEl.style.transform = `translateY(-${verticalOffset}px) rotateZ(${rot}deg)`;
-        pogEl.style.zIndex = i;
-        verticalOffset += 8;
-
-        stackEl.appendChild(pogEl);
+        const rot = (pog.id * 137) % 24 - 12;
+        el.style.bottom = offset + 'px';
+        el.style.transform = `rotateZ(${rot}deg)`;
+        el.style.zIndex = i;
+        offset += 7;
+        stackEl.appendChild(el);
       }
     }
 
-    function renderCollection(container, list) {
-      container.innerHTML = list.map(r => `<img title="${r.coin.name}" src="${r.coin.image}" style="width:30px;height:30px;border-radius:50%;margin:2px;">`).join('');
+    function renderRow(container, list) {
+      container.innerHTML = (list || []).map(r =>
+        `<img title="${r.coin.name}" src="${r.coin.image}" onerror="this.style.visibility='hidden'">`).join('');
     }
 
-    function showResults(state, winner) {
-      const p1Orig = state.originalPogs.filter(p => p.owner === 1);
-      const p2Orig = state.originalPogs.filter(p => p.owner === 2);
+    function animateCollection(flippedPogs, collectorNum) {
+      isAnimating = true;
+      const target = collectorNum === 1 ? p1Collected : p2Collected;
+      const tr = target.getBoundingClientRect();
+      const tx = tr.left + tr.width / 2, ty = tr.top + tr.height / 2;
+      let done = 0; const total = flippedPogs.length;
+      const finish = () => {
+        isAnimating = false;
+        if (pendingState) { renderGameState(pendingState); pendingState = null; }
+      };
+      if (total === 0) return finish();
 
-      const p1End = state.p1Collected;
-      const p2End = state.p2Collected;
-
-      const p1Lost = p1Orig.filter(orig => !p1End.find(e => e.id === orig.id));
-      const p1Gained = p1End.filter(endp => !p1Orig.find(o => o.id === endp.id));
-
-      const p2Lost = p2Orig.filter(orig => !p2End.find(e => e.id === orig.id));
-      const p2Gained = p2End.filter(endp => !p2Orig.find(o => o.id === endp.id));
-
-      resultsEl.innerHTML = `
-        <h3>Results Summary</h3>
-        <div class="results-section">
-          <h4>${p1NameEl.textContent} Ended With:</h4>
-          <div class="result-pog-list">${p1End.map(r => `<img title="${r.coin.name}" src="${r.coin.image}">`).join('') || '<em>None</em>'}</div>
-        </div>
-        <div class="results-section">
-          <h4>${p2NameEl.textContent} Ended With:</h4>
-          <div class="result-pog-list">${p2End.map(r => `<img title="${r.coin.name}" src="${r.coin.image}">`).join('') || '<em>None</em>'}</div>
-        </div>
-        <div style="margin-top:10px; font-size:0.8em; opacity:0.7;">
-         (Full stats available in console if needed)
-        </div>
-      `;
-      resultsEl.style.display = 'block';
+      flippedPogs.forEach((pd, idx) => {
+        const src = document.querySelector(`.pog[data-id="${pd.id}"]`);
+        if (!src) { if (++done === total) finish(); return; }
+        const rect = src.getBoundingClientRect();
+        const fly = src.cloneNode(true);
+        fly.style.position = 'fixed'; fly.style.zIndex = 4200; fly.style.margin = 0;
+        fly.style.top = rect.top + 'px'; fly.style.left = rect.left + 'px';
+        fly.style.transition = 'all .7s cubic-bezier(.3,.9,.3,1)';
+        document.body.appendChild(fly);
+        src.style.opacity = '0';
+        requestAnimationFrame(() => {
+          fly.style.top = (ty - 15) + 'px';
+          fly.style.left = (tx - 15) + 'px';
+          fly.style.transform = 'scale(0.28) rotate(540deg)';
+          fly.style.opacity = '0.2';
+        });
+        setTimeout(() => { fly.remove(); if (++done === total) finish(); }, 720 + idx * 30);
+      });
     }
+
+    /* ===================== GAME OVER MODAL ===================== */
+    function showGameOver(data) {
+      const s = data.finalState;
+      const iWon = data.winner === myPlayerNum;
+      const title = $('go-title');
+      if (data.winner === 0) { title.textContent = "It's a Tie!"; title.className = 'tie'; }
+      else if (iWon) { title.textContent = '🏆 You Win!'; title.className = 'win'; }
+      else { title.textContent = 'Defeat'; title.className = 'lose'; }
+
+      $('go-score').textContent = `${s.p1Score} — ${s.p2Score}`;
+
+      const myOrig = s.originalPogs.filter(p => p.owner === myPlayerNum);
+      const myEnd = myPlayerNum === 1 ? s.p1Collected : s.p2Collected;
+      const gained = myEnd.filter(e => !myOrig.find(o => o.id === e.id));
+      const lost = myOrig.filter(o => !myEnd.find(e => e.id === o.id));
+      const imgs = arr => arr.map(r => `<img src="${r.coin.image}" title="${r.coin.name}" onerror="this.style.visibility='hidden'">`).join('') || '<span style="color:#8b8ba7;font-size:.75rem">none</span>';
+      $('go-gained').innerHTML = imgs(gained);
+      $('go-lost').innerHTML = imgs(lost);
+
+      $('gameover-modal').classList.add('show');
+      if (data.winner === 0) { /* neutral */ }
+      else if (iWon) { sfx.win(); confettiRain(); }
+      else sfx.lose();
+    }
+    function hideGameOver() { $('gameover-modal').classList.remove('show'); }
+    $('go-rematch').addEventListener('click', () => { hideGameOver(); socket.emit('restartGame', currentRoomId); });
+    $('go-lobby').addEventListener('click', () => location.reload());
   </script>
 </body>
 
 </html>
-```
