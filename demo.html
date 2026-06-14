@@ -740,6 +740,13 @@
       const size = Math.max(70, 70 + result.count * 20);
       ring.animate([{ width: '14px', height: '14px', opacity: 0.95 }, { width: size + 'px', height: size + 'px', opacity: 0 }], { duration: 500, easing: 'cubic-bezier(.2,.7,.3,1)' });
       setTimeout(() => ring.remove(), 520);
+      // fast faint "dust" puff for a weightier thud
+      const dust = document.createElement('div');
+      dust.className = 'shockwave';
+      dust.style.left = '50%'; dust.style.top = '54%'; dust.style.borderColor = 'rgba(255,255,255,0.5)';
+      arenaEl.appendChild(dust);
+      dust.animate([{ width: '20px', height: '20px', opacity: 0.6 }, { width: (size + 60) + 'px', height: ((size + 60) * 0.5) + 'px', opacity: 0 }], { duration: 320, easing: 'cubic-bezier(.1,.8,.3,1)' });
+      setTimeout(() => dust.remove(), 340);
     }
 
     // burst every pog outward from the pile; face-ups fly to your collection,
@@ -767,7 +774,7 @@
         result.faceDown.forEach(pog => {                     // face-downs settle back
           const el = document.querySelector(`#stack .pog[data-id="${pog.id}"]`);
           if (!el) return;
-          el.style.transition = 'transform .34s cubic-bezier(.3,.8,.3,1)';
+          el.style.transition = 'transform .38s cubic-bezier(.34,1.56,.64,1)'; // settle with a little bounce
           el.style.transform = el.dataset.settle;
         });
       }, 440);
@@ -780,6 +787,10 @@
       const r = arenaEl.getBoundingClientRect();
       const ix = r.left + r.width * 0.5, iy = r.top + r.height * 0.52;
       const rating = rateSlam(result);
+
+      // accuracy callout — teaches the aim skill
+      const accTxt = result.accuracy === 'bullseye' ? 'DEAD CENTER!' : (result.accuracy === 'close' ? 'solid hit' : 'glancing blow');
+      floatNumber(ix, iy - 78, accTxt, result.accuracy === 'bullseye' ? '#fbbf24' : '#9ca3af');
 
       if (result.count > 0) {
         const cols = result.slammer === 1 ? ['#10b981', '#34d399', '#fff'] : ['#06b6d4', '#22d3ee', '#fff'];
