@@ -257,7 +257,10 @@
       </div>
       <div class="ladder-title">⚔️ The Gauntlet — climb the ladder</div>
       <div class="ladder" id="ladder"></div>
-      <button id="rush-btn" class="btn" style="margin-bottom:14px; background:linear-gradient(135deg,var(--gold),#d97706); box-shadow:0 10px 26px rgba(251,191,36,0.35);">⚡ SLAM RUSH — endless</button>
+      <div style="display:flex; gap:10px; margin-bottom:14px;">
+        <button id="rush-btn" class="btn" style="flex:1; background:linear-gradient(135deg,var(--gold),#d97706); box-shadow:0 10px 26px rgba(251,191,36,0.35);">⚡ SLAM RUSH</button>
+        <button id="daily-btn" class="btn" style="flex:1; background:linear-gradient(135deg,var(--accent-2),#0891b2); box-shadow:0 10px 26px rgba(6,182,212,0.35);">🗓 DAILY</button>
+      </div>
       <div class="ladder-title">🥏 Your slammer</div>
       <div class="slammers" id="slammers"></div>
       <a href="/" class="btn ghost">← Back to site</a>
@@ -388,8 +391,15 @@
       { id: "shiba-inu", symbol: "shib", name: "Shiba Inu", rarity: "common", image: "https://assets.coingecko.com/coins/images/11939/large/shiba.png" },
       { id: "pepe", symbol: "pepe", name: "Pepe", rarity: "common", image: "https://assets.coingecko.com/coins/images/29850/large/pepe-token.jpeg" }
     ];
-    const randCoin = () => COIN_POOL[Math.floor(Math.random() * COIN_POOL.length)];
+    // `rng` is normally Math.random, but the Daily Challenge swaps in a seeded RNG
+    // so everyone gets the same stack that day.
+    let rng = Math.random;
+    function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+    function hashStr(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+    function todayStr() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+    const randCoin = () => COIN_POOL[Math.floor(rng() * COIN_POOL.length)];
     const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+    let forcedSlammer = null; // daily forces Classic for fair comparison
     const $ = id => document.getElementById(id);
     const pogPoints = pog => pog.coin.rarity === 'legendary' ? 2 : 1;
 
@@ -402,6 +412,7 @@
     ];
     let currentTierIdx = 0;
     let rushActive = false;
+    let dailyActive = false, dailyDate = '';
     function getProgress() { try { return JSON.parse(localStorage.getItem('cryptopogs_gauntlet') || '{"cleared":0,"champion":false}'); } catch (e) { return { cleared: 0, champion: false }; } }
     function saveProgress(p) { try { localStorage.setItem('cryptopogs_gauntlet', JSON.stringify(p)); } catch (e) {} }
 
@@ -416,6 +427,7 @@
     const SLAMMER_MAP = {}; SLAMMERS.forEach(s => SLAMMER_MAP[s.key] = s);
     function slammerUnlocked(s) { const pr = getProgress(); return s.unlock === 'champion' ? !!pr.champion : pr.cleared >= s.unlock; }
     function getSelectedSlammer() {
+      if (forcedSlammer) return SLAMMER_MAP[forcedSlammer] || SLAMMERS[0];
       let key; try { key = localStorage.getItem('cryptopogs_slammer') || 'classic'; } catch (e) { key = 'classic'; }
       const s = SLAMMER_MAP[key];
       return (s && slammerUnlocked(s)) ? s : SLAMMERS[0];
@@ -465,10 +477,10 @@
       const coins = [];
       draw().forEach((c, i) => coins.push({ id: i, owner: 1, coin: c }));
       draw().forEach((c, i) => coins.push({ id: i + 6, owner: 2, coin: c }));
-      for (let i = coins.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [coins[i], coins[j]] = [coins[j], coins[i]]; }
+      for (let i = coins.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [coins[i], coins[j]] = [coins[j], coins[i]]; }
       const pogs = coins.map(c => ({ ...c, faceUp: false, special: null, nx: 0.5, ny: 0.52, rot: 0 }));
       restack(pogs);
-      const specialable = pogs.filter(p => p.coin.rarity !== 'legendary').sort(() => Math.random() - 0.5);
+      const specialable = pogs.filter(p => p.coin.rarity !== 'legendary').sort(() => rng() - 0.5);
       if (specialable[0]) specialable[0].special = 'bomb';
       if (specialable[1]) specialable[1].special = 'locked';
       return pogs;
@@ -894,8 +906,27 @@
       });
     }
 
+    /* ===================== DAILY CHALLENGE ===================== */
+    function getDaily() { try { return JSON.parse(localStorage.getItem('cryptopogs_daily') || '{}'); } catch (e) { return {}; } }
+    function startDaily() {
+      ac();
+      dailyDate = todayStr();
+      rng = mulberry32(hashStr('cryptopogs-' + dailyDate));  // same stack for everyone today
+      forcedSlammer = 'classic';                              // fair: everyone throws Classic
+      newGame();                                              // builds the seeded pile
+      rng = Math.random;                                      // restore for cosmetic/flip randomness
+      currentTierIdx = 2;                                     // vs Master
+      dailyActive = true; rushActive = false;
+      $('p2-name').textContent = '🗓 DAILY'; $('p2-who').textContent = '🗓 Daily (Master)';
+      $('start-overlay').style.display = 'none'; $('container').classList.add('active'); $('gameover-modal').classList.remove('show');
+      disc.style.display = 'none'; aimLine.style.display = 'none';
+      renderBoard(); beginPlayerTurn();
+      toast(`🗓 Daily Challenge — ${dailyDate}. Same stack for everyone today!`);
+    }
+
     /* ===================== SLAM RUSH (endless) ===================== */
     function startRush() {
+      forcedSlammer = null; dailyActive = false;
       ac(); newGame(); G.mode = 'rush'; G.lives = 3; rushActive = true;
       $('p2-name').textContent = '⚡ RUSH'; $('p2-who').textContent = '⚡ Slam Rush';
       $('start-overlay').style.display = 'none'; $('container').classList.add('active'); $('gameover-modal').classList.remove('show');
@@ -924,6 +955,30 @@
     /* ===================== GAME OVER ===================== */
     function endGame() {
       G.over = true;
+
+      // Daily Challenge result (separate from the gauntlet)
+      if (dailyActive) {
+        const won = G.p1Score >= G.p2Score;
+        const dr = getDaily();
+        const prevBest = dr.date === dailyDate ? (dr.best || 0) : 0;
+        const isNew = G.p1Score > prevBest;
+        const best = Math.max(prevBest, G.p1Score);
+        try { localStorage.setItem('cryptopogs_daily', JSON.stringify({ date: dailyDate, best })); } catch (e) {}
+        const rec = getRecord(); if (G.bestCombo > (rec.bestCombo || 0)) { rec.bestCombo = G.bestCombo; saveRecord(rec); renderRecord(); }
+        $('go-title').textContent = won ? '🗓 Daily Cleared!' : '🗓 Daily Done'; $('go-title').className = won ? 'win' : 'tie';
+        $('go-sub').textContent = `${dailyDate} · your best today: ${best} pts` + (isNew ? ' (new!)' : '');
+        $('go-score').textContent = `${G.p1Score} — ${G.p2Score} pts`;
+        const imgs = arr => arr.map(r => `<img src="${r.coin.image}" title="${r.coin.name}" onerror="this.style.visibility='hidden'">`).join('') || '<span style="color:#8b8ba7;font-size:.75rem">none</span>';
+        $('go-gained').innerHTML = imgs(G.p1Collected); $('go-lost').innerHTML = imgs(G.p2Collected);
+        $('go-next').style.display = 'none';
+        const share = `CryptoPogs Daily ${dailyDate}: ${G.p1Score} pts 🥏 cryptopogs.remotebb.com/demo.html`;
+        if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(share).then(() => toast('📋 Result copied — paste it to flex!')).catch(() => {}); }
+        $('gameover-modal').classList.add('show'); $('fire-vignette').classList.remove('on');
+        setBtn('waiting'); turnBanner.textContent = 'Daily complete'; renderScores();
+        if (won) { sfx.win(); confettiRain(); } else sfx.lose();
+        return;
+      }
+
       const winner = G.p1Score > G.p2Score ? 1 : (G.p2Score > G.p1Score ? 2 : 0);
       const rec = getRecord(); if (winner === 1) rec.wins++; else if (winner === 2) rec.losses++;
       if (G.bestCombo > (rec.bestCombo || 0)) rec.bestCombo = G.bestCombo;
@@ -965,7 +1020,7 @@
 
     /* ===================== ENTRY ===================== */
     function startMatch(tierIdx) {
-      rushActive = false;
+      rushActive = false; dailyActive = false; forcedSlammer = null;
       currentTierIdx = (typeof tierIdx === 'number') ? tierIdx : currentTierIdx;
       const T = TIERS[currentTierIdx];
       ac(); newGame();
@@ -976,12 +1031,13 @@
       renderBoard(); beginPlayerTurn();
       toast(`Vs ${T.name} — aim for the gold 2× pogs!`);
     }
-    function toMenu() { $('gameover-modal').classList.remove('show'); $('container').classList.remove('active'); $('start-overlay').style.display = 'flex'; $('fire-vignette').classList.remove('on'); renderRecord(); renderLadder(); renderSlammers(); G = null; phase = 'idle'; }
-    $('go-rematch').addEventListener('click', () => rushActive ? startRush() : startMatch(currentTierIdx));
+    function toMenu() { $('gameover-modal').classList.remove('show'); $('container').classList.remove('active'); $('start-overlay').style.display = 'flex'; $('fire-vignette').classList.remove('on'); rushActive = false; dailyActive = false; forcedSlammer = null; renderRecord(); renderLadder(); renderSlammers(); G = null; phase = 'idle'; }
+    $('go-rematch').addEventListener('click', () => dailyActive ? startDaily() : rushActive ? startRush() : startMatch(currentTierIdx));
     $('go-next').addEventListener('click', () => startMatch(Math.min(TIERS.length - 1, currentTierIdx + 1)));
     $('go-menu').addEventListener('click', toMenu);
     $('leave-btn').addEventListener('click', toMenu);
     $('rush-btn').addEventListener('click', startRush);
+    $('daily-btn').addEventListener('click', startDaily);
     renderLadder(); renderSlammers();
   </script>
 </body>
