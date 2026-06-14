@@ -10,6 +10,20 @@ zone, and flip your opponent's pogs into your own collection.
 
 ---
 
+## 🎲 Two ways to play
+
+| | **Browser Demo** | **Full Game** |
+|---|---|---|
+| Play | [cryptopogs.remotebb.com/demo.html](https://cryptopogs.remotebb.com/demo.html) | Run it yourself (below) |
+| Mode | Single-player vs CPU | Single-player **+ real-time online multiplayer** |
+| Setup | None — runs entirely in your browser | `npm install` + `node server.js` |
+| Accounts | Local W/L record (localStorage) | Real accounts, inventories & W/L (SQLite) |
+
+The demo (`demo.html`) is a fully client-side build — no server, no install — great for a quick taste.
+The full game (`server.js`) adds account-based play and live head-to-head matches over the web.
+
+---
+
 ## ✨ Features
 
 - ⚡ **Real-time multiplayer** — create a room, share the name, slam head-to-head over the web (Socket.IO)
