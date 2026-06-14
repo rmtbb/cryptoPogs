@@ -145,6 +145,11 @@
     .pog.face-down img { filter: grayscale(0.45) brightness(0.6); }
     .pog.face-down .sym { display: none; }
     .pog .badge { position:absolute; top:-4px; right:-4px; font-size:0.5rem; font-weight:900; background:var(--gold); color:#3a2a00; border-radius:999px; padding:0 4px; box-shadow:0 0 8px rgba(251,191,36,0.8); }
+    .pog .sbadge { position:absolute; top:-6px; left:-6px; font-size:0.85rem; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.6)); z-index:2; }
+    /* special pogs override the rarity ring so they're spottable even when overlapped in the stack */
+    .pog.sp-bomb { border-color:#f87171 !important; box-shadow:0 5px 13px rgba(0,0,0,.55), 0 0 16px rgba(239,68,68,0.75) !important; animation: bombpulse 1s infinite; }
+    @keyframes bombpulse { 0%,100%{ box-shadow:0 5px 13px rgba(0,0,0,.55), 0 0 12px rgba(239,68,68,0.6);} 50%{ box-shadow:0 5px 13px rgba(0,0,0,.55), 0 0 24px rgba(239,68,68,0.95);} }
+    .pog.sp-locked { border-color:#cbd5e1 !important; border-style:dashed !important; box-shadow:0 5px 13px rgba(0,0,0,.55), 0 0 10px rgba(203,213,225,0.45) !important; }
     .pog.r-common  { border-color: rgba(148,163,184,0.65); }
     .pog.r-rare    { border-color: #38bdf8; box-shadow: 0 5px 13px rgba(0,0,0,0.55), 0 0 12px rgba(56,189,248,0.5); }
     .pog.r-epic    { border-color: #c084fc; box-shadow: 0 5px 13px rgba(0,0,0,0.55), 0 0 15px rgba(192,132,252,0.65); }
@@ -238,7 +243,7 @@
       <div class="how">
         <div><span class="step-n">1</span><b>AIM</b> — a line sweeps up &amp; down the stack. Tap to choose <b>where</b> to strike.</div>
         <div style="margin-top:6px;"><span class="step-n">2</span><b>POWER</b> — stop the meter in the gold <b>PERFECT</b> zone. More power = the slam reaches further through the stack.</div>
-        <div style="margin-top:6px;"><span class="step-n">3</span>Flip pogs to keep 'em. <b style="color:var(--gold)">Gold legendaries are worth 2pts</b> — aim for them! Chain slams to go <b style="color:#ef7d3a">🔥 on fire</b> (1.5× points).</div>
+        <div style="margin-top:6px;"><span class="step-n">3</span>Flip pogs to keep 'em. <b style="color:var(--gold)">Gold 2× pogs</b>, <b style="color:#ef7d3a">💣 bombs</b> (chain-flip neighbours), and <b style="color:#9ca3af">🔒 locked</b> pogs (need a strong hit) reward smart aim. Chain slams to go <b style="color:#ef7d3a">🔥 on fire</b>.</div>
       </div>
       <div class="how" style="margin-top:12px; font-size:0.78rem; opacity:0.8;">
         Single-player browser demo. The full game adds real-time online multiplayer —
@@ -432,11 +437,15 @@
       // interleave owners so the stack is a fair mix, then assign heights bottom->top
       for (let i = coins.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [coins[i], coins[j]] = [coins[j], coins[i]]; }
       const pogs = coins.map((c, i) => ({
-        ...c, faceUp: false,
+        ...c, faceUp: false, special: null,
         ny: clamp(0.86 - (i / 11) * 0.72 + (Math.random() - 0.5) * 0.04, 0.1, 0.9),
         nx: clamp(0.5 + (Math.random() - 0.5) * 0.07, 0.4, 0.6),
         rot: (Math.random() - 0.5) * 22
       }));
+      // sprinkle in 1 bomb + 1 locked pog (on non-legendary pogs) for targeting depth
+      const specialable = pogs.filter(p => p.coin.rarity !== 'legendary').sort(() => Math.random() - 0.5);
+      if (specialable[0]) specialable[0].special = 'bomb';
+      if (specialable[1]) specialable[1].special = 'locked';
       const original = JSON.parse(JSON.stringify(pogs));
       G = { pogs, original, turn: 1, p1Score: 0, p2Score: 0, p1Collected: [], p2Collected: [], over: false, streak: { 1: 0, 2: 0 }, bestCombo: 0 };
     }
@@ -468,13 +477,28 @@
       const aimErr = Math.abs(impactY - cy);
       const accuracy = aimErr < 0.09 ? 'bullseye' : (aimErr < 0.2 ? 'close' : 'off');
 
-      const flipped = [];
+      const strongHit = p >= 70 || perfect;
       G.pogs.forEach(pog => {
         const d = Math.abs(pog.ny - impactY);
-        const chance = d <= blast ? baseChance * (1 - (d / blast) * 0.55) : 0.05;
+        let chance = d <= blast ? baseChance * (1 - (d / blast) * 0.55) : 0.05;
+        if (pog.special === 'locked' && !strongHit) chance = 0; // 🔒 resists weak hits
         pog.faceUp = Math.random() < chance;
-        if (pog.faceUp) flipped.push(pog);
+        pog.chained = false;
       });
+      // 💣 bomb chain: a flipped bomb detonates nearby pogs (and chains into other bombs)
+      let bombTriggered = false;
+      let queue = G.pogs.filter(p => p.faceUp && p.special === 'bomb');
+      const seen = new Set(queue);
+      while (queue.length) {
+        const bomb = queue.shift(); bombTriggered = true;
+        G.pogs.forEach(n => {
+          if (!n.faceUp && Math.abs(n.ny - bomb.ny) < 0.11) {
+            n.faceUp = true; n.chained = true;
+            if (n.special === 'bomb' && !seen.has(n)) { seen.add(n); queue.push(n); }
+          }
+        });
+      }
+      const flipped = G.pogs.filter(p => p.faceUp);
       const count = flipped.length;
       let points = 0;
       if (count > 0) {
@@ -486,7 +510,7 @@
         if (slammer === 1 && count > G.bestCombo) G.bestCombo = count;
       } else { G.streak[slammer] = 0; }
       G.pogs = G.pogs.filter(p => !p.faceUp);
-      return { count, points, flipped, slammer, perfect: perfect && count > 0, accuracy, impactY, blast, onFire };
+      return { count, points, flipped, slammer, perfect: perfect && count > 0, accuracy, impactY, blast, onFire, bombTriggered };
     }
 
     function rateSlam(r) {
@@ -693,6 +717,7 @@
         const cols = result.slammer === 1 ? ['#10b981', '#34d399', '#fff'] : ['#06b6d4', '#22d3ee', '#fff'];
         burst(ix, iy, cols, result.perfect ? 44 : 22, result.perfect ? 1.6 : 1);
         floatNumber(ix, iy - 26, '+' + result.points + (result.onFire ? ' 🔥' : ''), result.perfect ? '#fbbf24' : (result.slammer === 1 ? '#10b981' : '#06b6d4'), rating.tier >= 3);
+        if (result.bombTriggered) { toast('💣 BOMB CHAIN!'); burst(ix, iy, ['#ef4444', '#f59e0b', '#fff'], 38, 1.8); shake(1.6); }
         if (result.count >= 3) comboPop('COMBO ×' + result.count, rating.tier >= 3 ? '#fbbf24' : '#34d399');
         if (rating.tier >= 3) { sfx.perfect(); burst(ix, iy, ['#fbbf24', '#fde047', '#fff'], 34, 1.9); }
         else result.flipped.forEach((_, i) => sfx.collect(i));
@@ -723,12 +748,13 @@
       // draw bottom-up so higher pogs overlap in front
       [...G.pogs].sort((a, b) => b.ny - a.ny).forEach(pog => {
         const el = document.createElement('div');
-        el.className = 'pog ' + (pog.faceUp ? 'face-up' : 'face-down') + ' r-' + (pog.coin.rarity || 'common');
+        el.className = 'pog ' + (pog.faceUp ? 'face-up' : 'face-down') + ' r-' + (pog.coin.rarity || 'common') + (pog.special ? ' sp-' + pog.special : '');
         el.dataset.id = pog.id;
         const img = document.createElement('img'); img.src = pog.coin.image; img.alt = pog.coin.name; img.onerror = () => { img.style.visibility = 'hidden'; };
         el.appendChild(img);
         if (pog.faceUp) { const s = document.createElement('div'); s.className = 'sym'; s.textContent = pog.coin.symbol.toUpperCase(); el.appendChild(s); }
         if (pog.coin.rarity === 'legendary') { const b = document.createElement('div'); b.className = 'badge'; b.textContent = '2×'; el.appendChild(b); }
+        if (pog.special) { const sb = document.createElement('div'); sb.className = 'sbadge'; sb.textContent = pog.special === 'bomb' ? '💣' : '🔒'; el.appendChild(sb); }
         el.style.left = (pog.nx * 100) + '%'; el.style.top = (pog.ny * 100) + '%';
         el.style.transform = `translate(-50%,-50%) rotate(${pog.rot}deg)`;
         el.style.zIndex = Math.round((1 - pog.ny) * 100);
