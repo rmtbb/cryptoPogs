@@ -200,6 +200,9 @@
     #power-needle { position: absolute; top: -2px; bottom: -2px; width: 5px; left: 0%; background: #fff; border-radius: 3px; box-shadow: 0 0 10px #fff, 0 0 4px #fff; }
     .perfect-label { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); font-size: 0.55rem; font-weight: 900; color: rgba(0,0,0,0.6); letter-spacing: 0.5px; }
     #power-hint { font-size: 0.78rem; color: var(--muted); min-height: 16px; text-align:center; }
+    #coach { display:none; font-size:0.92rem; font-weight:800; color:#06281c; background:var(--gold); padding:7px 14px; border-radius:999px; box-shadow:0 6px 18px rgba(251,191,36,0.45); animation: coachbob .8s ease-in-out infinite; }
+    #coach.show { display:block; }
+    @keyframes coachbob { 0%,100%{ transform: translateY(0);} 50%{ transform: translateY(-4px);} }
     #power-hint b { color: var(--gold); }
     #slammer {
       width: 100%; padding: 16px; border: none; border-radius: 14px; cursor: pointer; font-family:'Russo One'; font-size: 1.25rem; color: #fff; letter-spacing: 1px;
@@ -326,6 +329,7 @@
             <div class="perfect-label">PERFECT</div>
           </div>
           <div id="power-hint">Tap SLAM to line up your strike</div>
+          <div id="coach"></div>
           <button id="slammer">SLAM!</button>
         </div>
       </div>
@@ -663,6 +667,11 @@
     let phase = 'idle'; let myTurn = false;
     let aimVal = 0.5, aimDir = 1, aimRAF = null;
     let powerVal = 0, powerDir = 1, powerRAF = null;
+    let tutorialActive = false;
+    function showCoach(t) { const c = $('coach'); c.textContent = t; c.classList.add('show'); }
+    function hideCoach() { $('coach').classList.remove('show'); }
+    function maybeStartTutorial() { try { tutorialActive = !localStorage.getItem('cryptopogs_tut'); } catch (e) { tutorialActive = false; } }
+    function finishTutorial() { tutorialActive = false; hideCoach(); try { localStorage.setItem('cryptopogs_tut', '1'); } catch (e) {} }
 
     function setBtn(mode) {
       slammerEl.className = '';
@@ -671,6 +680,12 @@
       else if (mode === 'power') { slammerEl.classList.add('power'); slammerEl.textContent = 'LOCK POWER'; slammerEl.disabled = false; powerHint.innerHTML = 'Stop the meter in the gold <b>PERFECT</b> zone!'; }
       else if (mode === 'resolving') { slammerEl.textContent = '💥'; slammerEl.disabled = true; powerHint.textContent = ''; }
       else if (mode === 'waiting') { slammerEl.classList.add('waiting'); slammerEl.textContent = 'CPU is slamming…'; slammerEl.disabled = true; powerHint.textContent = ''; stopInputs(); }
+      if (tutorialActive) {
+        if (mode === 'ready') showCoach('👆 Tap to start your throw');
+        else if (mode === 'aiming') showCoach('👆 Tap when the slammer is centred');
+        else if (mode === 'power') showCoach('👆 Tap in the gold PERFECT zone!');
+        else hideCoach();
+      }
     }
     function stopInputs() { if (aimRAF) cancelAnimationFrame(aimRAF); aimRAF = null; if (powerRAF) cancelAnimationFrame(powerRAF); powerRAF = null; powerWrap.classList.remove('live'); }
 
@@ -720,6 +735,7 @@
       if (powerRAF) cancelAnimationFrame(powerRAF); powerRAF = null; powerWrap.classList.remove('live');
       aimLine.style.display = 'none';
       myTurn = false;
+      if (tutorialActive) finishTutorial();
       const acc = clamp(1 - Math.abs(aimVal - 0.5) / 0.30, 0, 1);
       throwSlammer(aimVal, () => resolveImpact(Math.round(powerVal), acc));
     }
@@ -910,6 +926,7 @@
     function getDaily() { try { return JSON.parse(localStorage.getItem('cryptopogs_daily') || '{}'); } catch (e) { return {}; } }
     function startDaily() {
       ac();
+      maybeStartTutorial();
       dailyDate = todayStr();
       rng = mulberry32(hashStr('cryptopogs-' + dailyDate));  // same stack for everyone today
       forcedSlammer = 'classic';                              // fair: everyone throws Classic
@@ -927,6 +944,7 @@
     /* ===================== SLAM RUSH (endless) ===================== */
     function startRush() {
       forcedSlammer = null; dailyActive = false;
+      maybeStartTutorial();
       ac(); newGame(); G.mode = 'rush'; G.lives = 3; rushActive = true;
       $('p2-name').textContent = '⚡ RUSH'; $('p2-who').textContent = '⚡ Slam Rush';
       $('start-overlay').style.display = 'none'; $('container').classList.add('active'); $('gameover-modal').classList.remove('show');
@@ -1021,6 +1039,7 @@
     /* ===================== ENTRY ===================== */
     function startMatch(tierIdx) {
       rushActive = false; dailyActive = false; forcedSlammer = null;
+      maybeStartTutorial();
       currentTierIdx = (typeof tierIdx === 'number') ? tierIdx : currentTierIdx;
       const T = TIERS[currentTierIdx];
       ac(); newGame();
@@ -1031,7 +1050,7 @@
       renderBoard(); beginPlayerTurn();
       toast(`Vs ${T.name} — aim for the gold 2× pogs!`);
     }
-    function toMenu() { $('gameover-modal').classList.remove('show'); $('container').classList.remove('active'); $('start-overlay').style.display = 'flex'; $('fire-vignette').classList.remove('on'); rushActive = false; dailyActive = false; forcedSlammer = null; renderRecord(); renderLadder(); renderSlammers(); G = null; phase = 'idle'; }
+    function toMenu() { $('gameover-modal').classList.remove('show'); $('container').classList.remove('active'); $('start-overlay').style.display = 'flex'; $('fire-vignette').classList.remove('on'); hideCoach(); rushActive = false; dailyActive = false; forcedSlammer = null; renderRecord(); renderLadder(); renderSlammers(); G = null; phase = 'idle'; }
     $('go-rematch').addEventListener('click', () => dailyActive ? startDaily() : rushActive ? startRush() : startMatch(currentTierIdx));
     $('go-next').addEventListener('click', () => startMatch(Math.min(TIERS.length - 1, currentTierIdx + 1)));
     $('go-menu').addEventListener('click', toMenu);
