@@ -32,6 +32,10 @@
     }
     .display-font { font-family: 'Russo One', sans-serif; letter-spacing: 0.5px; }
     #fx-canvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 4000; }
+    #fire-vignette { position: fixed; inset: 0; pointer-events: none; z-index: 3900; box-shadow: inset 0 0 120px 20px rgba(239,125,58,0); transition: box-shadow .4s ease; }
+    #fire-vignette.on { animation: firepulse 1.2s infinite; }
+    @keyframes firepulse { 0%,100%{ box-shadow: inset 0 0 110px 24px rgba(239,125,58,0.32);} 50%{ box-shadow: inset 0 0 150px 42px rgba(239,125,58,0.55);} }
+    #flash { position: fixed; inset: 0; pointer-events: none; z-index: 3950; background: #fff; opacity: 0; }
 
     /* ---------- Start overlay ---------- */
     #start-overlay {
@@ -221,6 +225,8 @@
 
 <body>
   <canvas id="fx-canvas"></canvas>
+  <div id="fire-vignette"></div>
+  <div id="flash"></div>
 
   <!-- ============================ START ============================ -->
   <div id="start-overlay">
@@ -257,6 +263,7 @@
     <div id="topbar">
       <div class="logo display-font">CRYPTO POGS</div>
       <div style="display:flex; gap:8px;">
+        <button id="music-btn" class="icon-btn" title="Toggle music">🎵</button>
         <button id="sound-btn" class="icon-btn" title="Toggle sound">🔊</button>
         <button id="leave-btn" class="icon-btn" title="Quit to menu">🚪</button>
       </div>
@@ -523,9 +530,44 @@
       return { label: 'Solid hit', tier: 1 };
     }
 
-    /* ===================== SOUND ===================== */
-    let audioCtx = null, soundOn = true;
-    function ac() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
+    /* ===================== SOUND + MUSIC ===================== */
+    let audioCtx = null, soundOn = true, musicOn = true, musicGain = null, musicTimer = null, mStep = 0;
+    function ac() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        musicGain = audioCtx.createGain(); musicGain.gain.value = musicOn ? 0.5 : 0; musicGain.connect(audioCtx.destination);
+      }
+      startMusic();
+      return audioCtx;
+    }
+    // procedural chill-arcade loop (Am–F–C–G) — no audio files
+    const M_CHORDS = [[57, 60, 64], [53, 57, 60], [60, 64, 67], [55, 59, 62]];
+    const m2f = m => 440 * Math.pow(2, (m - 69) / 12);
+    function mnote(freq, dur, type, vol) {
+      if (!audioCtx || !musicGain) return;
+      const t = audioCtx.currentTime;
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = type; o.frequency.value = freq;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.02); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      o.connect(g); g.connect(musicGain); o.start(t); o.stop(t + dur + 0.03);
+    }
+    function startMusic() {
+      if (musicTimer || !audioCtx) return;
+      musicTimer = setInterval(() => {
+        const chord = M_CHORDS[Math.floor(mStep / 4) % M_CHORDS.length];
+        mnote(m2f(chord[mStep % chord.length] + 12), 0.18, 'triangle', 0.16);     // arp
+        if (mStep % 4 === 0) { mnote(m2f(chord[0] - 12), 0.5, 'sine', 0.24); mnote(55, 0.16, 'sine', 0.5); } // bass + kick
+        if (mStep % 4 === 2) mnote(m2f(chord[1]), 0.14, 'triangle', 0.09);          // soft offbeat
+        mStep = (mStep + 1) % 16;
+      }, 145);
+    }
+    function toggleMusic() {
+      musicOn = !musicOn;
+      if (musicGain) musicGain.gain.value = musicOn ? 0.5 : 0;
+      $('music-btn').textContent = musicOn ? '🎵' : '🔇';
+      if (musicOn) { ac(); startMusic(); }
+    }
+    function flash() { const f = $('flash'); f.animate([{ opacity: 0.45 }, { opacity: 0 }], { duration: 220, easing: 'ease-out' }); }
     function tone(freq, dur, type = 'sine', vol = 0.2, delay = 0) {
       if (!soundOn) return;
       try {
@@ -545,6 +587,7 @@
       whiff() { tone(150, 0.22, 'sine', 0.15); }
     };
     $('sound-btn').addEventListener('click', () => { soundOn = !soundOn; $('sound-btn').textContent = soundOn ? '🔊' : '🔇'; if (soundOn) tone(660, 0.1, 'sine', 0.2); });
+    $('music-btn').addEventListener('click', toggleMusic);
 
     /* ===================== PARTICLES ===================== */
     const canvas = $('fx-canvas'), ctx = canvas.getContext('2d');
@@ -719,7 +762,7 @@
         floatNumber(ix, iy - 26, '+' + result.points + (result.onFire ? ' 🔥' : ''), result.perfect ? '#fbbf24' : (result.slammer === 1 ? '#10b981' : '#06b6d4'), rating.tier >= 3);
         if (result.bombTriggered) { toast('💣 BOMB CHAIN!'); burst(ix, iy, ['#ef4444', '#f59e0b', '#fff'], 38, 1.8); shake(1.6); }
         if (result.count >= 3) comboPop('COMBO ×' + result.count, rating.tier >= 3 ? '#fbbf24' : '#34d399');
-        if (rating.tier >= 3) { sfx.perfect(); burst(ix, iy, ['#fbbf24', '#fde047', '#fff'], 34, 1.9); }
+        if (rating.tier >= 3) { sfx.perfect(); flash(); burst(ix, iy, ['#fbbf24', '#fde047', '#fff'], 34, 1.9); }
         else result.flipped.forEach((_, i) => sfx.collect(i));
         turnBanner.textContent = `${name}: ${rating.label}`; turnBanner.style.color = result.slammer === 1 ? 'var(--accent)' : 'var(--accent-2)';
         if (rating.tier >= 2) toast(`${name === 'You' ? '' : 'CPU '}${rating.label}`);
@@ -741,7 +784,11 @@
 
     /* ===================== RENDER ===================== */
     function renderScores() { $('p1-score').textContent = G.p1Score; $('p2-score').textContent = G.p2Score; $('p1-card').classList.toggle('active-turn', G.turn === 1 && !G.over); $('p2-card').classList.toggle('active-turn', G.turn === 2 && !G.over); }
-    function renderFire() { $('p1-card').classList.toggle('on-fire', G.streak[1] >= 3); $('p2-card').classList.toggle('on-fire', G.streak[2] >= 3); }
+    function renderFire() {
+      $('p1-card').classList.toggle('on-fire', G.streak[1] >= 3);
+      $('p2-card').classList.toggle('on-fire', G.streak[2] >= 3);
+      $('fire-vignette').classList.toggle('on', G.streak[1] >= 3); // your momentum lights the screen
+    }
     function renderBoard() { renderScores(); renderFire(); renderStack(); renderRows(); }
     function renderStack() {
       stackEl.innerHTML = '';
@@ -821,6 +868,7 @@
       $('go-next').style.display = advanced ? 'inline-flex' : 'none';
       $('gameover-modal').classList.add('show');
       setBtn('waiting'); turnBanner.textContent = 'Game over'; renderScores();
+      $('fire-vignette').classList.remove('on');
       if (winner === 1) { sfx.win(); confettiRain(); } else if (winner === 2) sfx.lose();
     }
 
@@ -836,7 +884,7 @@
       renderBoard(); beginPlayerTurn();
       toast(`Vs ${T.name} — aim for the gold 2× pogs!`);
     }
-    function toMenu() { $('gameover-modal').classList.remove('show'); $('container').classList.remove('active'); $('start-overlay').style.display = 'flex'; renderRecord(); renderLadder(); renderSlammers(); G = null; phase = 'idle'; }
+    function toMenu() { $('gameover-modal').classList.remove('show'); $('container').classList.remove('active'); $('start-overlay').style.display = 'flex'; $('fire-vignette').classList.remove('on'); renderRecord(); renderLadder(); renderSlammers(); G = null; phase = 'idle'; }
     $('go-rematch').addEventListener('click', () => startMatch(currentTierIdx));
     $('go-next').addEventListener('click', () => startMatch(Math.min(TIERS.length - 1, currentTierIdx + 1)));
     $('go-menu').addEventListener('click', toMenu);
