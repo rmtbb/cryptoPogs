@@ -134,49 +134,52 @@
 
     #game-col { display: flex; flex-direction: column; align-items: center; gap: 10px; }
 
-    /* ---------- Arena: a real (imperfect) vertical stack ---------- */
+    /* ---------- Arena: pogs piled on a table; throw the slammer down ---------- */
     #arena {
-      position: relative; width: 100%; max-width: 320px; height: 340px; margin: 6px auto 0;
-      perspective: 850px;
+      position: relative; width: 100%; max-width: 340px; height: 320px; margin: 6px auto 0;
+      border-radius: 18px; overflow: hidden;
+      background:
+        radial-gradient(120% 80% at 50% 30%, rgba(255,255,255,0.05), transparent 60%),
+        radial-gradient(70% 55% at 50% 62%, rgba(16,185,129,0.16), transparent 70%),
+        radial-gradient(100% 100% at 50% 100%, #14223a, #0e1428 70%);
+      border: 1px solid var(--panel-bd);
+      box-shadow: inset 0 2px 30px rgba(0,0,0,0.5);
     }
-    #arena::after { content:''; position:absolute; left:50%; bottom:8px; transform:translateX(-50%); width:62%; height:26px; border-radius:50%; background:radial-gradient(ellipse, rgba(0,0,0,0.55), transparent 70%); }
-    #stack { position:absolute; inset:0; transform-style:preserve-3d; }
+    #arena::after { content:''; position:absolute; left:50%; top:52%; transform:translate(-50%,-50%); width:120px; height:54px; border-radius:50%; background:radial-gradient(ellipse, rgba(0,0,0,0.45), transparent 70%); }
+    #stack { position:absolute; inset:0; }
     .pog {
-      position: absolute; width: 64px; height: 64px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      background: radial-gradient(circle at 36% 28%, #322c58, #14112a 76%);
-      border: 3px solid rgba(255,255,255,0.16);
-      box-shadow: 0 5px 13px rgba(0,0,0,0.55), inset 0 -4px 8px rgba(0,0,0,0.35);
-      transition: opacity .18s ease;
+      position: absolute; width: 70px; height: 70px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; will-change: transform;
+      background: radial-gradient(circle at 36% 26%, #3a3470, #100d22 80%);
+      /* the stacked "cap" edge: layered shadows give real cardboard thickness */
+      border: 2px solid rgba(255,255,255,0.18);
+      box-shadow: 0 3px 0 #0c0a1d, 0 6px 0 #0a0816, 0 12px 18px rgba(0,0,0,0.6), inset 0 -5px 10px rgba(0,0,0,0.45), inset 0 3px 7px rgba(255,255,255,0.14);
     }
-    .pog img { width: 38px; height: 38px; border-radius: 50%; pointer-events:none; }
-    .pog .sym { position: absolute; bottom: -3px; font-size: 0.5rem; font-weight: 800; color:#fff; background: rgba(0,0,0,0.65); padding: 0 5px; border-radius: 999px; }
-    .pog.face-down img { filter: grayscale(0.45) brightness(0.6); }
+    .pog img { width: 42px; height: 42px; border-radius: 50%; pointer-events:none; }
+    .pog .sym { position: absolute; bottom: -1px; font-size: 0.52rem; font-weight: 800; color:#fff; background: rgba(0,0,0,0.7); padding: 0 6px; border-radius: 999px; }
+    .pog.face-down img { filter: grayscale(0.5) brightness(0.55) contrast(0.9); }
     .pog.face-down .sym { display: none; }
-    .pog .badge { position:absolute; top:-4px; right:-4px; font-size:0.5rem; font-weight:900; background:var(--gold); color:#3a2a00; border-radius:999px; padding:0 4px; box-shadow:0 0 8px rgba(251,191,36,0.8); }
-    .pog .sbadge { position:absolute; top:-6px; left:-6px; font-size:0.85rem; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.6)); z-index:2; }
-    /* special pogs override the rarity ring so they're spottable even when overlapped in the stack */
-    .pog.sp-bomb { border-color:#f87171 !important; box-shadow:0 5px 13px rgba(0,0,0,.55), 0 0 16px rgba(239,68,68,0.75) !important; animation: bombpulse 1s infinite; }
-    @keyframes bombpulse { 0%,100%{ box-shadow:0 5px 13px rgba(0,0,0,.55), 0 0 12px rgba(239,68,68,0.6);} 50%{ box-shadow:0 5px 13px rgba(0,0,0,.55), 0 0 24px rgba(239,68,68,0.95);} }
-    .pog.sp-locked { border-color:#cbd5e1 !important; border-style:dashed !important; box-shadow:0 5px 13px rgba(0,0,0,.55), 0 0 10px rgba(203,213,225,0.45) !important; }
-    .pog.r-common  { border-color: rgba(148,163,184,0.65); }
-    .pog.r-rare    { border-color: #38bdf8; box-shadow: 0 5px 13px rgba(0,0,0,0.55), 0 0 12px rgba(56,189,248,0.5); }
-    .pog.r-epic    { border-color: #c084fc; box-shadow: 0 5px 13px rgba(0,0,0,0.55), 0 0 15px rgba(192,132,252,0.65); }
-    .pog.r-legendary { border-color: var(--gold); box-shadow: 0 5px 13px rgba(0,0,0,0.55), 0 0 18px rgba(251,191,36,0.85); }
+    .pog .badge { position:absolute; top:-3px; right:-3px; font-size:0.52rem; font-weight:900; background:var(--gold); color:#3a2a00; border-radius:999px; padding:0 4px; box-shadow:0 0 8px rgba(251,191,36,0.85); z-index:2; }
+    .pog .sbadge { position:absolute; top:-7px; left:-7px; font-size:0.9rem; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.7)); z-index:3; }
+    .pog.sp-bomb { border-color:#f87171; box-shadow:0 3px 0 #0c0a1d, 0 12px 18px rgba(0,0,0,0.6), 0 0 16px rgba(239,68,68,0.8); animation: bombpulse 1s infinite; }
+    @keyframes bombpulse { 0%,100%{ filter:brightness(1);} 50%{ filter:brightness(1.25);} }
+    .pog.sp-locked { border-color:#cbd5e1; border-style:dashed; }
+    .pog.r-rare    { border-color: #38bdf8; }
+    .pog.r-epic    { border-color: #c084fc; }
+    .pog.r-legendary { border-color: var(--gold); }
     .pog.face-up.r-legendary { animation: legend 1.5s infinite; }
     @keyframes legend { 0%,100%{ filter: brightness(1);} 50%{ filter: brightness(1.3);} }
 
-    /* horizontal aim line that sweeps UP/DOWN the stack (pick the height to strike) */
-    #aim-line { position:absolute; left:2%; right:14%; height:3px; transform:translateY(-50%); display:none; z-index:60;
-      background: linear-gradient(90deg, transparent, var(--accent) 30%, var(--accent)); box-shadow: 0 0 12px var(--accent); }
-    #aim-line::after { content:''; position:absolute; right:-2px; top:50%; transform:translateY(-50%); width:0;height:0;
-      border-top:7px solid transparent; border-bottom:7px solid transparent; border-right:10px solid var(--accent); }
-    /* the slammer (kini) waits at the right and strikes left into the stack */
+    /* the slammer (kini) hovers above and is thrown DOWN onto the pile */
+    #aim-line { position:absolute; top:2%; bottom:8%; width:3px; transform:translateX(-50%); display:none; z-index:60;
+      background: linear-gradient(var(--accent), rgba(16,185,129,0.05)); box-shadow: 0 0 12px var(--accent); }
+    #aim-line::after { content:''; position:absolute; bottom:0; left:50%; transform:translateX(-50%); width:18px; height:6px; border-radius:50%; background:radial-gradient(ellipse, rgba(16,185,129,0.6), transparent 70%); }
     #slammer-disc {
-      position:absolute; right:-2%; width:54px; height:54px; transform:translate(50%,-50%); border-radius:50%;
+      position:absolute; top:6%; left:50%; width:62px; height:62px; transform:translate(-50%,-50%); border-radius:50%;
       display:none; align-items:center; justify-content:center; z-index:70; pointer-events:none;
-      background: radial-gradient(circle at 35% 28%, #5a4aa0, #1a1438 78%); border:3px solid var(--accent);
-      box-shadow: 0 0 22px rgba(16,185,129,0.8), inset 0 -5px 12px rgba(0,0,0,0.55); font-size:1.3rem; color:#fff;
+      background: radial-gradient(circle at 35% 26%, #6a5ad0, #221a48 78%);
+      border:3px solid #cbb6ff;
+      box-shadow: 0 0 24px rgba(124,58,237,0.85), 0 14px 18px rgba(0,0,0,0.6), inset 0 -6px 14px rgba(0,0,0,0.55), inset 0 4px 8px rgba(255,255,255,0.25); font-size:1.5rem; color:#fff;
     }
     .shockwave { position:absolute; transform:translate(-50%,-50%); border-radius:50%; border:3px solid var(--accent); pointer-events:none; z-index:55; box-shadow:0 0 22px rgba(16,185,129,0.6); }
     .shockwave.perfect { border-color: var(--gold); box-shadow:0 0 28px rgba(251,191,36,0.85); }
@@ -252,8 +255,8 @@
       <div class="slammers" id="slammers"></div>
       <a href="/" class="btn ghost">← Back to site</a>
       <div class="how">
-        <div><span class="step-n">1</span><b>AIM</b> — a line sweeps up &amp; down the stack. Tap to choose <b>where</b> to strike.</div>
-        <div style="margin-top:6px;"><span class="step-n">2</span><b>POWER</b> — stop the meter in the gold <b>PERFECT</b> zone. More power = the slam reaches further through the stack.</div>
+        <div><span class="step-n">1</span><b>AIM</b> — your slammer sways over the stack. Tap to drop it <b>dead-centre</b> for the squarest hit.</div>
+        <div style="margin-top:6px;"><span class="step-n">2</span><b>POWER</b> — stop the meter in the gold <b>PERFECT</b> zone. A square, hard throw scatters the most pogs.</div>
         <div style="margin-top:6px;"><span class="step-n">3</span>Flip pogs to keep 'em. <b style="color:var(--gold)">Gold 2× pogs</b>, <b style="color:#ef7d3a">💣 bombs</b> (chain-flip neighbours), and <b style="color:#9ca3af">🔒 locked</b> pogs (need a strong hit) reward smart aim. Chain slams to go <b style="color:#ef7d3a">🔥 on fire</b>.</div>
       </div>
       <div class="how" style="margin-top:12px; font-size:0.78rem; opacity:0.8;">
@@ -439,22 +442,24 @@
     /* ===================== GAME STATE ===================== */
     let G = null;
 
-    // Build a real vertical stack: pogs spread along ny (height), small x jitter + tilt
-    // so it looks hand-stacked. ny in [0.12, 0.88]; index 0 = bottom.
+    // Tidy central pile (a real pog stack on the table). restack() lays the
+    // remaining pogs back into a neat pile after each scatter.
+    function restack(pogs) {
+      pogs.forEach((p, i) => {
+        p.nx = clamp(0.5 + (Math.random() - 0.5) * 0.13, 0.42, 0.58);
+        p.ny = clamp(0.52 + (Math.random() - 0.5) * 0.12, 0.42, 0.62);
+        p.rot = (Math.random() - 0.5) * 26;
+      });
+    }
     function newGame() {
       const draw = () => Array.from({ length: 6 }, randCoin);
       const coins = [];
       draw().forEach((c, i) => coins.push({ id: i, owner: 1, coin: c }));
       draw().forEach((c, i) => coins.push({ id: i + 6, owner: 2, coin: c }));
-      // interleave owners so the stack is a fair mix, then assign heights bottom->top
       for (let i = coins.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [coins[i], coins[j]] = [coins[j], coins[i]]; }
-      const pogs = coins.map((c, i) => ({
-        ...c, faceUp: false, special: null,
-        ny: clamp(0.86 - (i / 11) * 0.72 + (Math.random() - 0.5) * 0.04, 0.1, 0.9),
-        nx: clamp(0.5 + (Math.random() - 0.5) * 0.07, 0.4, 0.6),
-        rot: (Math.random() - 0.5) * 22
-      }));
-      // sprinkle in 1 bomb + 1 locked pog (on non-legendary pogs) for targeting depth
+      const pogs = coins.map(c => ({ ...c, faceUp: false, special: null, nx: 0.5, ny: 0.52, rot: 0 }));
+      restack(pogs);
+      // sprinkle in 1 bomb + 1 locked pog (on non-legendary pogs)
       const specialable = pogs.filter(p => p.coin.rarity !== 'legendary').sort(() => Math.random() - 0.5);
       if (specialable[0]) specialable[0].special = 'bomb';
       if (specialable[1]) specialable[1].special = 'locked';
@@ -464,53 +469,40 @@
 
     function centroidY() { return G.pogs.length ? G.pogs.reduce((s, p) => s + p.ny, 0) / G.pogs.length : 0.5; }
 
-    // Strike the stack at height impactY with power. Pogs near that height flip
-    // (power = how far the shock reaches through the stack). Legendaries = 2pts;
-    // a 3+ scoring streak goes on-fire (wider reach + 1.5x points).
-    function doSlam(power, impactY) {
+    // Real pogs: you throw the slammer DOWN onto the stack. A square, hard throw
+    // (high accuracy + power) sends most of the stack flying; a glancing or weak
+    // one barely disturbs it. `acc` is 0..1 (1 = dead-centre hit).
+    function doSlam(power, acc) {
       const p = clamp(power, 0, 100);
       const slammer = G.turn;
-      // player's slammer applies its traits; the CPU always uses Classic
       const mod = slammer === 1 ? getSelectedSlammer() : SLAMMERS[0];
       const perfect = p >= mod.perfectAt;
       const onFire = G.streak[slammer] >= mod.fireAt;
-      // blast = how far the shock reaches through the stack. Capped below the
-      // stack's half-height so a centred hit can't clear everything — you must
-      // choose: centre for the most pogs, or aim off-centre to grab a gold.
-      let blast = 0.16 + 0.26 * (p / 100) + mod.blastBonus;
-      if (perfect) blast += 0.06;
-      if (onFire) blast += 0.04;
-      blast = Math.min(blast, 0.33 + mod.capBonus);
-      let baseChance = 0.42 + 0.45 * (p / 100);
-      if (perfect) baseChance = 0.95;
       const goldVal = mod.gold;
 
-      const cy = centroidY();
-      const aimErr = Math.abs(impactY - cy);
-      const accuracy = aimErr < 0.09 ? 'bullseye' : (aimErr < 0.2 ? 'close' : 'off');
-
+      let base = perfect ? 0.82 : (0.18 + 0.32 * (p / 100)) + (mod.blastBonus || 0) * 0.5;
+      const accMult = 0.40 + 0.60 * clamp(acc, 0, 1);
+      const cap = 0.85 + (mod.capBonus || 0);
       const strongHit = p >= 70 || perfect;
+      const accuracy = acc > 0.85 ? 'bullseye' : (acc > 0.6 ? 'close' : 'off');
+
       G.pogs.forEach(pog => {
-        const d = Math.abs(pog.ny - impactY);
-        let chance = d <= blast ? baseChance * (1 - (d / blast) * 0.55) : 0.05;
+        let chance = Math.min(cap, base * accMult * (onFire ? 1.12 : 1));
         if (pog.special === 'locked' && !strongHit) chance = 0; // 🔒 resists weak hits
         pog.faceUp = Math.random() < chance;
         pog.chained = false;
       });
-      // 💣 bomb chain: a flipped bomb detonates nearby pogs (and chains into other bombs)
+      // 💣 bomb: a flipped bomb scatters up to 3 extra pogs (chains into other bombs)
       let bombTriggered = false;
       let queue = G.pogs.filter(p => p.faceUp && p.special === 'bomb');
       const seen = new Set(queue);
       while (queue.length) {
-        const bomb = queue.shift(); bombTriggered = true;
-        G.pogs.forEach(n => {
-          if (!n.faceUp && Math.abs(n.ny - bomb.ny) < 0.11) {
-            n.faceUp = true; n.chained = true;
-            if (n.special === 'bomb' && !seen.has(n)) { seen.add(n); queue.push(n); }
-          }
-        });
+        queue.shift(); bombTriggered = true;
+        const victims = G.pogs.filter(p => !p.faceUp).sort(() => Math.random() - 0.5).slice(0, 3);
+        victims.forEach(n => { n.faceUp = true; n.chained = true; if (n.special === 'bomb' && !seen.has(n)) { seen.add(n); queue.push(n); } });
       }
       const flipped = G.pogs.filter(p => p.faceUp);
+      const faceDown = G.pogs.filter(p => !p.faceUp);
       const count = flipped.length;
       let points = 0;
       if (count > 0) {
@@ -521,8 +513,9 @@
         G.streak[slammer]++;
         if (slammer === 1 && count > G.bestCombo) G.bestCombo = count;
       } else { G.streak[slammer] = 0; }
-      G.pogs = G.pogs.filter(p => !p.faceUp);
-      return { count, points, flipped, slammer, perfect: perfect && count > 0, accuracy, impactY, blast, onFire, bombTriggered };
+      // don't filter G.pogs here — the scatter animation needs every pog; the
+      // remaining (face-down) pogs are set in advanceAfterSlam.
+      return { count, points, flipped, faceDown, slammer, perfect: perfect && count > 0, accuracy, onFire, bombTriggered };
     }
 
     function rateSlam(r) {
@@ -651,8 +644,8 @@
 
     function setBtn(mode) {
       slammerEl.className = '';
-      if (mode === 'ready') { slammerEl.textContent = '🎯 AIM'; slammerEl.disabled = false; powerHint.textContent = 'Tap to start aiming'; }
-      else if (mode === 'aiming') { slammerEl.classList.add('aim'); slammerEl.textContent = 'LOCK HEIGHT'; slammerEl.disabled = false; powerHint.textContent = 'Tap to choose where to strike the stack'; }
+      if (mode === 'ready') { slammerEl.textContent = '🎯 AIM'; slammerEl.disabled = false; powerHint.textContent = 'Tap to line up your throw'; }
+      else if (mode === 'aiming') { slammerEl.classList.add('aim'); slammerEl.textContent = 'LOCK AIM'; slammerEl.disabled = false; powerHint.textContent = 'Centre the slammer over the stack — dead-centre hits hardest'; }
       else if (mode === 'power') { slammerEl.classList.add('power'); slammerEl.textContent = 'LOCK POWER'; slammerEl.disabled = false; powerHint.innerHTML = 'Stop the meter in the gold <b>PERFECT</b> zone!'; }
       else if (mode === 'resolving') { slammerEl.textContent = '💥'; slammerEl.disabled = true; powerHint.textContent = ''; }
       else if (mode === 'waiting') { slammerEl.classList.add('waiting'); slammerEl.textContent = 'CPU is slamming…'; slammerEl.disabled = true; powerHint.textContent = ''; stopInputs(); }
@@ -661,7 +654,7 @@
 
     function beginPlayerTurn() {
       myTurn = true; phase = 'ready'; setBtn('ready');
-      turnBanner.textContent = '🎯 Your turn — pick your strike!'; turnBanner.style.color = 'var(--accent)';
+      turnBanner.textContent = '🎯 Your turn — throw your slammer!'; turnBanner.style.color = 'var(--accent)';
     }
     function beginCpuTurn() {
       myTurn = false; phase = 'cpu'; setBtn('waiting');
@@ -669,28 +662,25 @@
       turnBanner.textContent = `${T.icon} ${T.name} is slamming…`; turnBanner.style.color = 'var(--muted)';
       setTimeout(() => {
         if (!G || G.over) return;
-        // CPU aims by tier skill, hunts gold pogs more at higher tiers
-        let target = centroidY();
-        const golds = G.pogs.filter(p => p.coin.rarity === 'legendary');
-        if (golds.length && Math.random() < T.gold) target = golds[Math.floor(Math.random() * golds.length)].ny;
-        const impactY = clamp(target + (Math.random() - 0.5) * T.err * 2, 0.1, 0.9);
+        // CPU throw accuracy scales with tier (lower err = squarer hit)
+        const aimX = clamp(0.5 + (Math.random() - 0.5) * T.err * 2.2, 0.18, 0.82);
+        const acc = clamp(1 - Math.abs(aimX - 0.5) / 0.30, 0, 1);
         const power = Math.random() < T.perfect ? (90 + Math.random() * 10) : (T.pMin + Math.random() * (T.pMax - T.pMin));
-        disc.textContent = '🥏'; disc.style.display = 'flex'; disc.style.top = (centroidY() * 100) + '%';
-        disc.animate([{ top: disc.style.top }, { top: (impactY * 100) + '%' }], { duration: 480, fill: 'forwards', easing: 'ease-in-out' });
-        setTimeout(() => { disc.style.top = (impactY * 100) + '%'; resolveImpact(power, impactY); }, 500);
-      }, 820);
+        disc.textContent = '🥏';
+        throwSlammer(aimX, () => resolveImpact(power, acc));
+      }, 760);
     }
 
     function startAim() {
       phase = 'aiming'; setBtn('aiming'); sfx.charge();
-      aimVal = 0.12; aimDir = 1;
+      aimVal = 0.18; aimDir = 1;
       const sp = getSelectedSlammer().aimSpeed;
       disc.textContent = getSelectedSlammer().icon;
-      aimLine.style.display = 'block'; disc.style.display = 'flex';
+      aimLine.style.display = 'block'; disc.style.display = 'flex'; disc.style.top = '6%';
       const step = () => {
-        aimVal += aimDir * 0.012 * sp;
-        if (aimVal >= 0.88) { aimVal = 0.88; aimDir = -1; } if (aimVal <= 0.12) { aimVal = 0.12; aimDir = 1; }
-        const pct = (aimVal * 100) + '%'; aimLine.style.top = pct; disc.style.top = pct;
+        aimVal += aimDir * 0.011 * sp;
+        if (aimVal >= 0.82) { aimVal = 0.82; aimDir = -1; } if (aimVal <= 0.18) { aimVal = 0.18; aimDir = 1; }
+        const pct = (aimVal * 100) + '%'; aimLine.style.left = pct; disc.style.left = pct;
         aimRAF = requestAnimationFrame(step);
       };
       aimRAF = requestAnimationFrame(step);
@@ -707,7 +697,8 @@
       if (powerRAF) cancelAnimationFrame(powerRAF); powerRAF = null; powerWrap.classList.remove('live');
       aimLine.style.display = 'none';
       myTurn = false;
-      resolveImpact(Math.round(powerVal), aimVal);
+      const acc = clamp(1 - Math.abs(aimVal - 0.5) / 0.30, 0, 1);
+      throwSlammer(aimVal, () => resolveImpact(Math.round(powerVal), acc));
     }
     function handleTap() {
       if (!G || G.over || !myTurn) return;
@@ -718,31 +709,68 @@
     slammerEl.addEventListener('click', handleTap);
     arenaEl.addEventListener('click', handleTap);
 
-    function resolveImpact(power, impactY) {
+    // the slammer is thrown DOWN onto the stack at aimX, then the stack scatters
+    function throwSlammer(aimX, onImpact) {
       phase = 'resolving'; setBtn('resolving');
-      disc.style.display = 'flex'; disc.style.top = (impactY * 100) + '%';
-      // slammer flies LEFT into the stack at the chosen height
-      const strike = disc.animate([{ right: '-2%' }, { right: '42%' }], { duration: 150, easing: 'cubic-bezier(.4,0,.9,1)', fill: 'forwards' });
+      disc.style.display = 'flex'; disc.style.left = (aimX * 100) + '%';
+      const drop = disc.animate(
+        [{ top: '6%', transform: 'translate(-50%,-50%) scale(1.18)' }, { top: '52%', transform: 'translate(-50%,-50%) scale(0.82)' }],
+        { duration: 180, easing: 'cubic-bezier(.5,0,.95,1)', fill: 'forwards' });
       setTimeout(() => {
-        const result = doSlam(power, impactY);
-        renderScores();
-        shockwave(result);
-        showSlamFx(result);
-        setTimeout(() => { strike.cancel(); disc.style.right = '-2%'; disc.style.display = 'none'; }, 220);
-        const wait = result.count > 0 ? 940 : 460;
-        setTimeout(() => advanceAfterSlam(result), wait);
-      }, 160);
+        onImpact();
+        setTimeout(() => { drop.cancel(); disc.style.display = 'none'; disc.style.top = '6%'; }, 260);
+      }, 190);
     }
 
-    function shockwave(result) {
-      const w = arenaEl.offsetWidth, h = arenaEl.offsetHeight;
+    function resolveImpact(power, acc) {
+      const result = doSlam(power, acc);
+      renderScores();
+      impactRing(result);
+      showSlamFx(result);
+      scatter(result);
+      const wait = 460 + (result.count > 0 ? 640 : 220);
+      setTimeout(() => advanceAfterSlam(result), wait);
+    }
+
+    function impactRing(result) {
       const ring = document.createElement('div');
       ring.className = 'shockwave' + (result.perfect ? ' perfect' : '') + (result.slammer === 2 ? ' cpu' : '');
-      ring.style.left = '50%'; ring.style.top = (result.impactY * h) + 'px';
+      ring.style.left = '50%'; ring.style.top = '52%';
       arenaEl.appendChild(ring);
-      const size = Math.max(40, result.blast * 2.4 * h);
-      ring.animate([{ width: '12px', height: '12px', opacity: 0.95 }, { width: size + 'px', height: size + 'px', opacity: 0 }], { duration: 520, easing: 'cubic-bezier(.2,.7,.3,1)' });
-      setTimeout(() => ring.remove(), 540);
+      const size = Math.max(70, 70 + result.count * 20);
+      ring.animate([{ width: '14px', height: '14px', opacity: 0.95 }, { width: size + 'px', height: size + 'px', opacity: 0 }], { duration: 500, easing: 'cubic-bezier(.2,.7,.3,1)' });
+      setTimeout(() => ring.remove(), 520);
+    }
+
+    // burst every pog outward from the pile; face-ups fly to your collection,
+    // face-downs settle back into the pile — the real-pog scatter
+    function scatter(result) {
+      const all = [...result.flipped, ...result.faceDown];
+      all.forEach(pog => {
+        const el = document.querySelector(`#stack .pog[data-id="${pog.id}"]`);
+        if (!el) return;
+        if (pog.faceUp) {
+          el.classList.remove('face-down'); el.classList.add('face-up');
+          if (!el.querySelector('.sym')) { const s = document.createElement('div'); s.className = 'sym'; s.textContent = pog.coin.symbol.toUpperCase(); el.appendChild(s); }
+        }
+        const ang = Math.random() * Math.PI * 2;
+        const dist = pog.faceUp ? (62 + Math.random() * 78) : (26 + Math.random() * 48);
+        const dx = Math.cos(ang) * dist, dy = Math.sin(ang) * dist * 0.72;
+        const spin = (Math.random() - 0.5) * 680;
+        el.style.zIndex = 200 + (pog.faceUp ? 50 : 0);
+        el.style.transition = 'transform .42s cubic-bezier(.15,.85,.3,1)';
+        el.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) rotate(${pog.rot + spin}deg)`;
+        el.dataset.settle = `translate(-50%,-50%) rotate(${pog.rot}deg)`;
+      });
+      setTimeout(() => {
+        animateCollection(result.flipped, result.slammer);  // face-ups fly away
+        result.faceDown.forEach(pog => {                     // face-downs settle back
+          const el = document.querySelector(`#stack .pog[data-id="${pog.id}"]`);
+          if (!el) return;
+          el.style.transition = 'transform .34s cubic-bezier(.3,.8,.3,1)';
+          el.style.transform = el.dataset.settle;
+        });
+      }, 440);
     }
 
     function showSlamFx(result) {
@@ -750,22 +778,12 @@
       sfx.slam(); shake(result.perfect ? 1.8 : (result.count > 0 ? 1.1 : 0.5));
       haptic(result.perfect ? [0, 30, 40, 35] : (result.count > 0 ? 16 : 8));
       const r = arenaEl.getBoundingClientRect();
-      const ix = r.left + r.width * 0.5, iy = r.top + result.impactY * r.height;
+      const ix = r.left + r.width * 0.5, iy = r.top + r.height * 0.52;
       const rating = rateSlam(result);
-
-      result.flipped.forEach(pd => {
-        const el = document.querySelector(`#stack .pog[data-id="${pd.id}"]`);
-        if (el) {
-          el.classList.remove('face-down'); el.classList.add('face-up');
-          if (!el.querySelector('.sym')) { const s = document.createElement('div'); s.className = 'sym'; s.textContent = pd.coin.symbol.toUpperCase(); el.appendChild(s); }
-          const base = el.style.transform;
-          el.animate([{ transform: base + ' scale(1)' }, { transform: base + ' scale(1.3)' }, { transform: base + ' scale(1)' }], { duration: 220 });
-        }
-      });
 
       if (result.count > 0) {
         const cols = result.slammer === 1 ? ['#10b981', '#34d399', '#fff'] : ['#06b6d4', '#22d3ee', '#fff'];
-        burst(ix, iy, cols, result.perfect ? 44 : 22, result.perfect ? 1.6 : 1);
+        burst(ix, iy, cols, result.perfect ? 46 : 24, result.perfect ? 1.7 : 1.1);
         floatNumber(ix, iy - 26, '+' + result.points + (result.onFire ? ' 🔥' : ''), result.perfect ? '#fbbf24' : (result.slammer === 1 ? '#10b981' : '#06b6d4'), rating.tier >= 3);
         if (result.bombTriggered) { toast('💣 BOMB CHAIN!'); burst(ix, iy, ['#ef4444', '#f59e0b', '#fff'], 38, 1.8); shake(1.6); haptic([0, 25, 30, 60]); }
         if (result.count >= 3) comboPop('COMBO ×' + result.count, rating.tier >= 3 ? '#fbbf24' : '#34d399');
@@ -773,8 +791,7 @@
         else result.flipped.forEach((_, i) => sfx.collect(i));
         turnBanner.textContent = `${name}: ${rating.label}`; turnBanner.style.color = result.slammer === 1 ? 'var(--accent)' : 'var(--accent-2)';
         if (rating.tier >= 2) toast(`${name === 'You' ? '' : 'CPU '}${rating.label}`);
-        if (G.streak[result.slammer] === 3) toast(`🔥 ${name} on fire — 1.5× points + bigger reach!`);
-        setTimeout(() => animateCollection(result.flipped, result.slammer), 240);
+        if (G.streak[result.slammer] === 3) toast(`🔥 ${name} on fire — 1.5× points!`);
       } else {
         sfx.whiff(); turnBanner.textContent = `${name}: ${rating.label}`; turnBanner.style.color = 'var(--muted)';
         floatNumber(ix, iy - 26, 'MISS', '#8b8ba7');
@@ -783,6 +800,7 @@
     }
 
     function advanceAfterSlam(result) {
+      G.pogs = result.faceDown;
       if (G.pogs.length === 0) { endGame(); return; }
       G.turn = G.turn === 1 ? 2 : 1;
       renderBoard();
