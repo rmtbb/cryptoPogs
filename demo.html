@@ -248,9 +248,11 @@
         <span>🏆 <b id="rec-wins">0</b> Wins</span>
         <span>💀 <b id="rec-losses">0</b> Losses</span>
         <span>⭐ Best combo <b id="rec-combo">0</b></span>
+        <span>⚡ Rush <b id="rec-rush">0</b></span>
       </div>
       <div class="ladder-title">⚔️ The Gauntlet — climb the ladder</div>
       <div class="ladder" id="ladder"></div>
+      <button id="rush-btn" class="btn" style="margin-bottom:14px; background:linear-gradient(135deg,var(--gold),#d97706); box-shadow:0 10px 26px rgba(251,191,36,0.35);">⚡ SLAM RUSH — endless</button>
       <div class="ladder-title">🥏 Your slammer</div>
       <div class="slammers" id="slammers"></div>
       <a href="/" class="btn ghost">← Back to site</a>
@@ -394,6 +396,7 @@
       { key: 'legend', name: 'Legend', icon: '👑', desc: 'Near-perfect — good luck',    err: 0.055, pMin: 74, pMax: 99, perfect: 0.42, gold: 0.85 }
     ];
     let currentTierIdx = 0;
+    let rushActive = false;
     function getProgress() { try { return JSON.parse(localStorage.getItem('cryptopogs_gauntlet') || '{"cleared":0,"champion":false}'); } catch (e) { return { cleared: 0, champion: false }; } }
     function saveProgress(p) { try { localStorage.setItem('cryptopogs_gauntlet', JSON.stringify(p)); } catch (e) {} }
 
@@ -451,7 +454,8 @@
         p.rot = (Math.random() - 0.5) * 26;
       });
     }
-    function newGame() {
+    // build a fresh 12-pog pile (coins + positions + 1 bomb + 1 locked)
+    function makePile() {
       const draw = () => Array.from({ length: 6 }, randCoin);
       const coins = [];
       draw().forEach((c, i) => coins.push({ id: i, owner: 1, coin: c }));
@@ -459,15 +463,16 @@
       for (let i = coins.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [coins[i], coins[j]] = [coins[j], coins[i]]; }
       const pogs = coins.map(c => ({ ...c, faceUp: false, special: null, nx: 0.5, ny: 0.52, rot: 0 }));
       restack(pogs);
-      // sprinkle in 1 bomb + 1 locked pog (on non-legendary pogs)
       const specialable = pogs.filter(p => p.coin.rarity !== 'legendary').sort(() => Math.random() - 0.5);
       if (specialable[0]) specialable[0].special = 'bomb';
       if (specialable[1]) specialable[1].special = 'locked';
-      const original = JSON.parse(JSON.stringify(pogs));
-      G = { pogs, original, turn: 1, p1Score: 0, p2Score: 0, p1Collected: [], p2Collected: [], over: false, streak: { 1: 0, 2: 0 }, bestCombo: 0 };
+      return pogs;
     }
-
-    function centroidY() { return G.pogs.length ? G.pogs.reduce((s, p) => s + p.ny, 0) / G.pogs.length : 0.5; }
+    function newGame() {
+      const pogs = makePile();
+      const original = JSON.parse(JSON.stringify(pogs));
+      G = { pogs, original, turn: 1, p1Score: 0, p2Score: 0, p1Collected: [], p2Collected: [], over: false, streak: { 1: 0, 2: 0 }, bestCombo: 0, mode: 'gauntlet', lives: 0, stacksCleared: 0 };
+    }
 
     // Real pogs: you throw the slammer DOWN onto the stack. A square, hard throw
     // (high accuracy + power) sends most of the stack flying; a glancing or weak
@@ -632,7 +637,7 @@
     /* ===================== RECORD ===================== */
     function getRecord() { try { return JSON.parse(localStorage.getItem('cryptopogs_demo_record') || '{"wins":0,"losses":0,"bestCombo":0}'); } catch (e) { return { wins: 0, losses: 0, bestCombo: 0 }; } }
     function saveRecord(r) { try { localStorage.setItem('cryptopogs_demo_record', JSON.stringify(r)); } catch (e) {} }
-    function renderRecord() { const r = getRecord(); $('rec-wins').textContent = r.wins; $('rec-losses').textContent = r.losses; $('rec-combo').textContent = r.bestCombo || 0; }
+    function renderRecord() { const r = getRecord(); $('rec-wins').textContent = r.wins; $('rec-losses').textContent = r.losses; $('rec-combo').textContent = r.bestCombo || 0; const rr = $('rec-rush'); if (rr) rr.textContent = r.rushBest || 0; }
     renderRecord();
 
     /* ===================== INPUT FLOW ===================== */
@@ -654,7 +659,8 @@
 
     function beginPlayerTurn() {
       myTurn = true; phase = 'ready'; setBtn('ready');
-      turnBanner.textContent = '🎯 Your turn — throw your slammer!'; turnBanner.style.color = 'var(--accent)';
+      if (G.mode === 'rush') { turnBanner.textContent = `⚡ Slam Rush — ${G.lives} ❤ left · ${G.stacksCleared} cleared`; turnBanner.style.color = 'var(--gold)'; }
+      else { turnBanner.textContent = '🎯 Your turn — throw your slammer!'; turnBanner.style.color = 'var(--accent)'; }
     }
     function beginCpuTurn() {
       myTurn = false; phase = 'cpu'; setBtn('waiting');
@@ -812,6 +818,12 @@
 
     function advanceAfterSlam(result) {
       G.pogs = result.faceDown;
+      if (G.mode === 'rush') {
+        if (result.count === 0) G.lives--;
+        if (G.lives <= 0) { renderBoard(); endRush(); return; }
+        if (G.pogs.length === 0) { G.stacksCleared++; G.p1Score += 5; toast('🔄 Stack cleared! +5 — fresh pile'); G.pogs = makePile(); G.original = JSON.parse(JSON.stringify(G.pogs)); }
+        renderBoard(); beginPlayerTurn(); return;
+      }
       if (G.pogs.length === 0) { endGame(); return; }
       G.turn = G.turn === 1 ? 2 : 1;
       renderBoard();
@@ -819,7 +831,18 @@
     }
 
     /* ===================== RENDER ===================== */
-    function renderScores() { $('p1-score').textContent = G.p1Score; $('p2-score').textContent = G.p2Score; $('p1-card').classList.toggle('active-turn', G.turn === 1 && !G.over); $('p2-card').classList.toggle('active-turn', G.turn === 2 && !G.over); }
+    function renderScores() {
+      $('p1-score').textContent = G.p1Score;
+      if (G.mode === 'rush') {
+        $('p2-score').textContent = G.lives > 0 ? '❤'.repeat(G.lives) : '—';
+        $('p1-card').classList.toggle('active-turn', !G.over);
+        $('p2-card').classList.remove('active-turn');
+      } else {
+        $('p2-score').textContent = G.p2Score;
+        $('p1-card').classList.toggle('active-turn', G.turn === 1 && !G.over);
+        $('p2-card').classList.toggle('active-turn', G.turn === 2 && !G.over);
+      }
+    }
     function renderFire() {
       $('p1-card').classList.toggle('on-fire', G.streak[1] >= 3);
       $('p2-card').classList.toggle('on-fire', G.streak[2] >= 3);
@@ -866,6 +889,33 @@
       });
     }
 
+    /* ===================== SLAM RUSH (endless) ===================== */
+    function startRush() {
+      ac(); newGame(); G.mode = 'rush'; G.lives = 3; rushActive = true;
+      $('p2-name').textContent = '⚡ RUSH'; $('p2-who').textContent = '⚡ Slam Rush';
+      $('start-overlay').style.display = 'none'; $('container').classList.add('active'); $('gameover-modal').classList.remove('show');
+      disc.style.display = 'none'; aimLine.style.display = 'none';
+      renderBoard(); beginPlayerTurn();
+      toast("⚡ Slam Rush! Clear the pile for +5. Three whiffs and you're out.");
+    }
+    function endRush() {
+      G.over = true;
+      const rec = getRecord();
+      const isNew = G.p1Score > (rec.rushBest || 0);
+      rec.rushBest = Math.max(rec.rushBest || 0, G.p1Score);
+      if (G.bestCombo > (rec.bestCombo || 0)) rec.bestCombo = G.bestCombo;
+      saveRecord(rec); renderRecord();
+      $('go-title').textContent = isNew ? '⚡ NEW BEST!' : '⚡ Slam Rush Over'; $('go-title').className = isNew ? 'win' : 'tie';
+      $('go-sub').textContent = `Stacks cleared: ${G.stacksCleared} · Best: ${rec.rushBest} pts`;
+      $('go-score').textContent = `${G.p1Score} pts`;
+      const imgs = arr => arr.map(r => `<img src="${r.coin.image}" title="${r.coin.name}" onerror="this.style.visibility='hidden'">`).join('') || '<span style="color:#8b8ba7;font-size:.75rem">none</span>';
+      $('go-gained').innerHTML = imgs(G.p1Collected.slice(-12));
+      $('go-lost').innerHTML = '<span style="color:#8b8ba7;font-size:.75rem">—</span>';
+      $('go-next').style.display = 'none';
+      $('gameover-modal').classList.add('show'); $('fire-vignette').classList.remove('on');
+      if (isNew) { sfx.win(); confettiRain(); } else sfx.lose();
+    }
+
     /* ===================== GAME OVER ===================== */
     function endGame() {
       G.over = true;
@@ -910,6 +960,7 @@
 
     /* ===================== ENTRY ===================== */
     function startMatch(tierIdx) {
+      rushActive = false;
       currentTierIdx = (typeof tierIdx === 'number') ? tierIdx : currentTierIdx;
       const T = TIERS[currentTierIdx];
       ac(); newGame();
@@ -921,10 +972,11 @@
       toast(`Vs ${T.name} — aim for the gold 2× pogs!`);
     }
     function toMenu() { $('gameover-modal').classList.remove('show'); $('container').classList.remove('active'); $('start-overlay').style.display = 'flex'; $('fire-vignette').classList.remove('on'); renderRecord(); renderLadder(); renderSlammers(); G = null; phase = 'idle'; }
-    $('go-rematch').addEventListener('click', () => startMatch(currentTierIdx));
+    $('go-rematch').addEventListener('click', () => rushActive ? startRush() : startMatch(currentTierIdx));
     $('go-next').addEventListener('click', () => startMatch(Math.min(TIERS.length - 1, currentTierIdx + 1)));
     $('go-menu').addEventListener('click', toMenu);
     $('leave-btn').addEventListener('click', toMenu);
+    $('rush-btn').addEventListener('click', startRush);
     renderLadder(); renderSlammers();
   </script>
 </body>
