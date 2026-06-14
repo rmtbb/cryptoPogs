@@ -204,12 +204,14 @@
       position: relative; width: 100%; max-width: 340px; height: 320px; margin: 6px auto 0;
       border-radius: 18px; overflow: hidden;
       background:
-        radial-gradient(120% 80% at 50% 30%, rgba(255,255,255,0.05), transparent 60%),
-        radial-gradient(70% 55% at 50% 62%, rgba(16,185,129,0.16), transparent 70%),
-        radial-gradient(100% 100% at 50% 100%, #14223a, #0e1428 70%);
-      border: 1px solid var(--panel-bd); box-shadow: inset 0 2px 30px rgba(0,0,0,0.5);
+        radial-gradient(120% 80% at 50% 28%, rgba(255,255,255,0.06), transparent 58%),
+        radial-gradient(60% 48% at 50% 60%, rgba(16,185,129,0.20), transparent 72%),
+        repeating-radial-gradient(circle at 50% 60%, rgba(255,255,255,0.02) 0 2px, transparent 2px 7px),
+        radial-gradient(110% 110% at 50% 105%, #16273f, #0c1124 72%);
+      border: 1px solid var(--panel-bd); box-shadow: inset 0 2px 30px rgba(0,0,0,0.55), inset 0 0 70px 20px rgba(0,0,0,0.4);
     }
-    #arena::after { content:''; position:absolute; left:50%; top:52%; transform:translate(-50%,-50%); width:120px; height:54px; border-radius:50%; background:radial-gradient(ellipse, rgba(0,0,0,0.45), transparent 70%); }
+    #arena::before { content:''; position:absolute; left:50%; top:55%; transform:translate(-50%,-50%); width:150px; height:150px; border-radius:50%; border:1px dashed rgba(255,255,255,0.07); }
+    #arena::after { content:''; position:absolute; left:50%; top:55%; transform:translate(-50%,-50%); width:130px; height:58px; border-radius:50%; background:radial-gradient(ellipse, rgba(0,0,0,0.5), transparent 70%); }
     #pile { position:absolute; inset:0; }
 
     .pog {
@@ -219,7 +221,8 @@
       border: 2px solid rgba(255,255,255,0.18);
       box-shadow: 0 3px 0 #0c0a1d, 0 6px 0 #0a0816, 0 12px 18px rgba(0,0,0,0.6), inset 0 -5px 10px rgba(0,0,0,0.45), inset 0 3px 7px rgba(255,255,255,0.14);
     }
-    .pog img { width: 42px; height: 42px; border-radius: 50%; pointer-events:none; }
+    .pog::before { content:''; position:absolute; left:8%; right:8%; top:6%; height:42%; border-radius:50%; background:linear-gradient(180deg, rgba(255,255,255,0.28), rgba(255,255,255,0) 90%); pointer-events:none; z-index:1; }
+    .pog img { width: 42px; height: 42px; border-radius: 50%; pointer-events:none; position:relative; z-index:1; }
     .pog .sym { position: absolute; bottom: -1px; font-size: 0.52rem; font-weight: 800; color:#fff; background: rgba(0,0,0,0.7); padding: 0 6px; border-radius: 999px; }
     .pog.face-down img { filter: grayscale(0.5) brightness(0.55) contrast(0.9); }
     .pog.face-down .sym { display: none; }
@@ -761,6 +764,11 @@
       const size = Math.max(70, 70 + result.flippedCount * 20);
       ring.animate([{ width: '14px', height: '14px', opacity: 0.95 }, { width: size + 'px', height: size + 'px', opacity: 0 }], { duration: 500, easing: 'cubic-bezier(.2,.7,.3,1)' });
       setTimeout(() => ring.remove(), 520);
+      const dust = document.createElement('div');
+      dust.className = 'shockwave'; dust.style.left = '50%'; dust.style.top = '54%'; dust.style.borderColor = 'rgba(255,255,255,0.5)';
+      arenaEl.appendChild(dust);
+      dust.animate([{ width: '20px', height: '20px', opacity: 0.6 }, { width: (size + 60) + 'px', height: ((size + 60) * 0.5) + 'px', opacity: 0 }], { duration: 320, easing: 'cubic-bezier(.1,.8,.3,1)' });
+      setTimeout(() => dust.remove(), 340);
     }
 
     function scatter(result) {
@@ -788,7 +796,7 @@
         faceDown.forEach(pog => {
           const el = document.querySelector(`#pile .pog[data-id="${pog.id}"]`);
           if (!el) return;
-          el.style.transition = 'transform .34s cubic-bezier(.3,.8,.3,1)';
+          el.style.transition = 'transform .38s cubic-bezier(.34,1.56,.64,1)';
           el.style.transform = el.dataset.settle;
         });
       }, 440);
@@ -800,6 +808,8 @@
       const r = arenaEl.getBoundingClientRect();
       const ix = r.left + r.width * 0.5, iy = r.top + r.height * 0.52;
       const rating = rateSlam(result);
+      const accTxt = result.accuracy === 'bullseye' ? 'DEAD CENTER!' : (result.accuracy === 'close' ? 'solid hit' : 'glancing blow');
+      floatNumber(ix, iy - 78, accTxt, result.accuracy === 'bullseye' ? '#fbbf24' : '#9ca3af');
       if (result.flippedCount > 0) {
         const cols = result.slammer === 1 ? ['#10b981', '#34d399', '#fff'] : ['#06b6d4', '#22d3ee', '#fff'];
         burst(ix, iy, cols, result.perfect ? 46 : 24, result.perfect ? 1.7 : 1.1);
