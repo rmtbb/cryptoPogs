@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Crypto Pogs — Slam to Win</title>
 
   <meta property="og:title" content="Crypto Pogs: The Game" />
@@ -322,6 +322,26 @@
     .float-num {
       position: fixed; z-index: 4500; font-family:'Russo One'; font-weight: 900; pointer-events: none;
       color: var(--gold); text-shadow: 0 2px 10px rgba(0,0,0,0.6);
+    }
+
+    /* ============================ MOBILE ============================ */
+    @media (max-width: 600px) {
+      /* lobby: scrollable + safe areas so the card never clips */
+      #lobby-overlay { justify-content: flex-start; overflow-y: auto; -webkit-overflow-scrolling: touch;
+        padding: calc(16px + env(safe-area-inset-top)) 14px calc(18px + env(safe-area-inset-bottom)); gap: 12px; }
+      .brand h1 { font-size: 2.1rem; }
+
+      /* in-game: keep scoreboard + arena + controls above the fold */
+      #container { padding: 6px 8px calc(8px + env(safe-area-inset-bottom)); gap: 7px; }
+      #topbar { padding-top: env(safe-area-inset-top); }
+      #scoreboard { gap: 8px; } .pscore { padding: 6px 10px; } .pscore .pnum { font-size: 1.6rem; }
+      #turn-banner { font-size: 0.9rem; min-height: 20px; }
+      #board { gap: 8px; }
+      #arena { height: 260px; max-width: 300px; margin-top: 2px; }
+      .pog { width: 58px; height: 58px; } .pog img { width: 34px; height: 34px; }
+      #slammer-disc { width: 52px; height: 52px; font-size: 1.2rem; }
+      #control-zone { gap: 6px; } #slammer { padding: 13px; font-size: 1.1rem; } #power-hint { font-size: 0.72rem; }
+      .side-panel { padding: 8px 10px; } .side-panel h3 { margin: 2px 0 4px; } .side-pogs { gap: 3px; min-height: 30px; } .side-pogs img { width: 26px; height: 26px; }
     }
   </style>
 </head>
