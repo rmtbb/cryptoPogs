@@ -69,6 +69,21 @@
     .how b { color: var(--gold); }
     .how .step-n { display:inline-flex; width:20px;height:20px; border-radius:50%; background:var(--accent); color:#06281c; font-weight:900; font-size:0.72rem; align-items:center; justify-content:center; margin-right:6px; vertical-align:middle; }
 
+    /* ---------- Gauntlet ladder hub ---------- */
+    .ladder-title { font-family:'Russo One'; font-size:0.8rem; letter-spacing:1.5px; text-transform:uppercase; color:var(--accent); margin-bottom:10px; }
+    .ladder { display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+    .tier-btn { display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:12px; border:1px solid var(--panel-bd); background:var(--panel); cursor:pointer; transition:all .15s ease; text-align:left; color:var(--text); width:100%; }
+    .tier-btn:hover:not(.locked) { border-color:var(--accent); transform:translateX(3px); background:rgba(16,185,129,0.08); }
+    .tier-btn .ti { font-size:1.7rem; width:34px; text-align:center; }
+    .tier-btn .tinfo { flex:1; min-width:0; }
+    .tier-btn .tname { font-weight:800; }
+    .tier-btn .tdesc { font-size:0.72rem; color:var(--muted); }
+    .tier-btn .play-ic { color:var(--accent); font-weight:900; font-size:1.1rem; }
+    .tier-btn.locked { opacity:0.4; cursor:not-allowed; }
+    .tier-btn.cleared { border-color:rgba(16,185,129,0.4); }
+    .tier-btn.cleared .tname::after { content:' ✓'; color:var(--accent); }
+    .tier-btn.champ { border-color:var(--gold); box-shadow:0 0 16px rgba(251,191,36,0.3); }
+
     /* ============================ GAME ============================ */
     #container { display: none; min-height: 100vh; flex-direction: column; align-items: center; padding: 16px; gap: 14px; }
     #container.active { display: flex; }
@@ -206,8 +221,9 @@
         <span>💀 <b id="rec-losses">0</b> Losses</span>
         <span>⭐ Best combo <b id="rec-combo">0</b></span>
       </div>
-      <button id="play-btn" class="btn">▶ PLAY VS CPU</button>
-      <a href="/" class="btn ghost" style="margin-top:10px;">← Back to site</a>
+      <div class="ladder-title">⚔️ The Gauntlet — climb the ladder</div>
+      <div class="ladder" id="ladder"></div>
+      <a href="/" class="btn ghost">← Back to site</a>
       <div class="how">
         <div><span class="step-n">1</span><b>AIM</b> — a line sweeps up &amp; down the stack. Tap to choose <b>where</b> to strike.</div>
         <div style="margin-top:6px;"><span class="step-n">2</span><b>POWER</b> — stop the meter in the gold <b>PERFECT</b> zone. More power = the slam reaches further through the stack.</div>
@@ -274,7 +290,7 @@
       </div>
 
       <div class="side-panel" id="p2-panel">
-        <div class="who" style="color:var(--accent-2)">CPU</div>
+        <div class="who" style="color:var(--accent-2)" id="p2-who">CPU</div>
         <h3>Contributed</h3>
         <div class="side-pogs" id="p2-contributed"></div>
         <h3>Collected</h3>
@@ -288,6 +304,7 @@
   <div id="gameover-modal">
     <div class="go-card">
       <h2 id="go-title">Game Over</h2>
+      <div id="go-sub" style="color:var(--muted); font-size:0.9rem; margin-bottom:4px; min-height:18px;"></div>
       <div class="go-score" id="go-score">0 — 0</div>
       <div class="go-deltas">
         <div class="delta-box">
@@ -300,7 +317,8 @@
         </div>
       </div>
       <div class="go-actions">
-        <button id="go-rematch" class="btn">Rematch</button>
+        <button id="go-next" class="btn" style="display:none;">Next Tier ▶</button>
+        <button id="go-rematch" class="btn ghost">Rematch</button>
         <button id="go-menu" class="btn ghost">Menu</button>
       </div>
     </div>
@@ -336,6 +354,29 @@
     const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
     const $ = id => document.getElementById(id);
     const pogPoints = pog => pog.coin.rarity === 'legendary' ? 2 : 1;
+
+    /* ===================== GAUNTLET (progression ladder) ===================== */
+    const TIERS = [
+      { key: 'rookie', name: 'Rookie', icon: '🐣', desc: 'Sloppy aim, weak slams',     err: 0.30,  pMin: 40, pMax: 72, perfect: 0.03, gold: 0.00 },
+      { key: 'pro',    name: 'Pro',    icon: '😎', desc: 'Steady and competent',        err: 0.17,  pMin: 55, pMax: 86, perfect: 0.12, gold: 0.30 },
+      { key: 'master', name: 'Master', icon: '🔥', desc: 'Sharp aim, hunts the gold',   err: 0.10,  pMin: 64, pMax: 93, perfect: 0.25, gold: 0.55 },
+      { key: 'legend', name: 'Legend', icon: '👑', desc: 'Near-perfect — good luck',    err: 0.055, pMin: 74, pMax: 99, perfect: 0.42, gold: 0.85 }
+    ];
+    let currentTierIdx = 0;
+    function getProgress() { try { return JSON.parse(localStorage.getItem('cryptopogs_gauntlet') || '{"cleared":0,"champion":false}'); } catch (e) { return { cleared: 0, champion: false }; } }
+    function saveProgress(p) { try { localStorage.setItem('cryptopogs_gauntlet', JSON.stringify(p)); } catch (e) {} }
+    function renderLadder() {
+      const cleared = getProgress().cleared;
+      const lad = $('ladder'); lad.innerHTML = '';
+      TIERS.forEach((t, i) => {
+        const unlocked = i <= cleared;
+        const btn = document.createElement('button');
+        btn.className = 'tier-btn' + (unlocked ? '' : ' locked') + (i < cleared ? ' cleared' : '') + (i === TIERS.length - 1 && getProgress().champion ? ' champ' : '');
+        btn.innerHTML = `<span class="ti">${unlocked ? t.icon : '🔒'}</span><div class="tinfo"><div class="tname">${t.name}</div><div class="tdesc">${unlocked ? t.desc : 'Beat ' + TIERS[Math.max(0, i - 1)].name + ' to unlock'}</div></div>${unlocked ? '<span class="play-ic">▶</span>' : ''}`;
+        if (unlocked) btn.onclick = () => startMatch(i);
+        lad.appendChild(btn);
+      });
+    }
 
     /* ===================== GAME STATE ===================== */
     let G = null;
@@ -507,15 +548,16 @@
     }
     function beginCpuTurn() {
       myTurn = false; phase = 'cpu'; setBtn('waiting');
-      turnBanner.textContent = "CPU's turn…"; turnBanner.style.color = 'var(--muted)';
+      const T = TIERS[currentTierIdx];
+      turnBanner.textContent = `${T.icon} ${T.name} is slamming…`; turnBanner.style.color = 'var(--muted)';
       setTimeout(() => {
         if (!G || G.over) return;
-        // CPU aims near the cluster, sometimes targets a golden pog's height
+        // CPU aims by tier skill, hunts gold pogs more at higher tiers
         let target = centroidY();
         const golds = G.pogs.filter(p => p.coin.rarity === 'legendary');
-        if (golds.length && Math.random() < 0.45) target = golds[Math.floor(Math.random() * golds.length)].ny;
-        const impactY = clamp(target + (Math.random() - 0.5) * 0.22, 0.1, 0.9);
-        const power = Math.random() < 0.15 ? (90 + Math.random() * 10) : (50 + Math.random() * 38);
+        if (golds.length && Math.random() < T.gold) target = golds[Math.floor(Math.random() * golds.length)].ny;
+        const impactY = clamp(target + (Math.random() - 0.5) * T.err * 2, 0.1, 0.9);
+        const power = Math.random() < T.perfect ? (90 + Math.random() * 10) : (T.pMin + Math.random() * (T.pMax - T.pMin));
         disc.style.display = 'flex'; disc.style.top = (centroidY() * 100) + '%';
         disc.animate([{ top: disc.style.top }, { top: (impactY * 100) + '%' }], { duration: 480, fill: 'forwards', easing: 'ease-in-out' });
         setTimeout(() => { disc.style.top = (impactY * 100) + '%'; resolveImpact(power, impactY); }, 500);
@@ -675,31 +717,51 @@
       const rec = getRecord(); if (winner === 1) rec.wins++; else if (winner === 2) rec.losses++;
       if (G.bestCombo > (rec.bestCombo || 0)) rec.bestCombo = G.bestCombo;
       saveRecord(rec); renderRecord();
-      const title = $('go-title');
-      if (winner === 0) { title.textContent = "It's a Tie!"; title.className = 'tie'; }
-      else if (winner === 1) { title.textContent = '🏆 You Win!'; title.className = 'win'; }
-      else { title.textContent = 'CPU Wins'; title.className = 'lose'; }
+
+      // gauntlet advancement
+      const prog = getProgress(); let advanced = false, champion = false;
+      if (winner === 1 && currentTierIdx === prog.cleared) {
+        if (currentTierIdx < TIERS.length - 1) { prog.cleared = currentTierIdx + 1; saveProgress(prog); advanced = true; }
+        else if (!prog.champion) { prog.champion = true; saveProgress(prog); champion = true; }
+      }
+      renderLadder();
+
+      const T = TIERS[currentTierIdx];
+      const title = $('go-title'), sub = $('go-sub');
+      if (winner === 0) { title.textContent = "It's a Tie!"; title.className = 'tie'; sub.textContent = `${T.name} held you to a draw.`; }
+      else if (winner === 1) {
+        if (champion) { title.textContent = '👑 CHAMPION!'; title.className = 'win'; sub.textContent = 'You conquered the entire gauntlet!'; }
+        else if (advanced) { title.textContent = '🎉 Tier Cleared!'; title.className = 'win'; sub.textContent = `${TIERS[currentTierIdx + 1].name} unlocked!`; }
+        else { title.textContent = '🏆 You Win!'; title.className = 'win'; sub.textContent = `Beat ${T.name} again.`; }
+      } else { title.textContent = 'Defeated'; title.className = 'lose'; sub.textContent = `${T.icon} ${T.name} got you this time.`; }
+
       $('go-score').textContent = `${G.p1Score} — ${G.p2Score} pts`;
       const imgs = arr => arr.map(r => `<img src="${r.coin.image}" title="${r.coin.name}" onerror="this.style.visibility='hidden'">`).join('') || '<span style="color:#8b8ba7;font-size:.75rem">none</span>';
       $('go-gained').innerHTML = imgs(G.p1Collected); $('go-lost').innerHTML = imgs(G.p2Collected);
+      $('go-next').style.display = advanced ? 'inline-flex' : 'none';
       $('gameover-modal').classList.add('show');
       setBtn('waiting'); turnBanner.textContent = 'Game over'; renderScores();
       if (winner === 1) { sfx.win(); confettiRain(); } else if (winner === 2) sfx.lose();
     }
 
     /* ===================== ENTRY ===================== */
-    function startMatch() {
+    function startMatch(tierIdx) {
+      currentTierIdx = (typeof tierIdx === 'number') ? tierIdx : currentTierIdx;
+      const T = TIERS[currentTierIdx];
       ac(); newGame();
+      $('p2-name').textContent = `${T.icon} ${T.name}`;
+      $('p2-who').textContent = `${T.icon} ${T.name}`;
       $('start-overlay').style.display = 'none'; $('container').classList.add('active'); $('gameover-modal').classList.remove('show');
       disc.style.display = 'none'; aimLine.style.display = 'none';
       renderBoard(); beginPlayerTurn();
-      toast('Match started — aim for the gold 2× pogs!');
+      toast(`Vs ${T.name} — aim for the gold 2× pogs!`);
     }
-    function toMenu() { $('gameover-modal').classList.remove('show'); $('container').classList.remove('active'); $('start-overlay').style.display = 'flex'; renderRecord(); G = null; phase = 'idle'; }
-    $('play-btn').addEventListener('click', startMatch);
-    $('go-rematch').addEventListener('click', startMatch);
+    function toMenu() { $('gameover-modal').classList.remove('show'); $('container').classList.remove('active'); $('start-overlay').style.display = 'flex'; renderRecord(); renderLadder(); G = null; phase = 'idle'; }
+    $('go-rematch').addEventListener('click', () => startMatch(currentTierIdx));
+    $('go-next').addEventListener('click', () => startMatch(Math.min(TIERS.length - 1, currentTierIdx + 1)));
     $('go-menu').addEventListener('click', toMenu);
     $('leave-btn').addEventListener('click', toMenu);
+    renderLadder();
   </script>
 </body>
 
