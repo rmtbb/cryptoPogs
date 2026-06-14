@@ -31,6 +31,11 @@
         var(--bg);
     }
     .display-font { font-family: 'Russo One', sans-serif; letter-spacing: 0.5px; }
+    /* subtle living background */
+    body::before { content:''; position:fixed; inset:0; z-index:-1; pointer-events:none;
+      background: radial-gradient(45% 40% at 20% 28%, rgba(124,58,237,0.18), transparent 70%), radial-gradient(45% 40% at 82% 72%, rgba(16,185,129,0.14), transparent 70%);
+      animation: drift 18s ease-in-out infinite alternate; }
+    @keyframes drift { 0%{ transform: translate(-3%,-2%) scale(1);} 100%{ transform: translate(3%,2%) scale(1.08);} }
     #fx-canvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 4000; }
     #fire-vignette { position: fixed; inset: 0; pointer-events: none; z-index: 3900; box-shadow: inset 0 0 120px 20px rgba(239,125,58,0); transition: box-shadow .4s ease; }
     #fire-vignette.on { animation: firepulse 1.2s infinite; }
@@ -568,6 +573,7 @@
       if (musicOn) { ac(); startMusic(); }
     }
     function flash() { const f = $('flash'); f.animate([{ opacity: 0.45 }, { opacity: 0 }], { duration: 220, easing: 'ease-out' }); }
+    function haptic(pat) { try { if (navigator.vibrate) navigator.vibrate(pat); } catch (e) {} }
     function tone(freq, dur, type = 'sine', vol = 0.2, delay = 0) {
       if (!soundOn) return;
       try {
@@ -742,6 +748,7 @@
     function showSlamFx(result) {
       const name = result.slammer === 1 ? 'You' : 'CPU';
       sfx.slam(); shake(result.perfect ? 1.8 : (result.count > 0 ? 1.1 : 0.5));
+      haptic(result.perfect ? [0, 30, 40, 35] : (result.count > 0 ? 16 : 8));
       const r = arenaEl.getBoundingClientRect();
       const ix = r.left + r.width * 0.5, iy = r.top + result.impactY * r.height;
       const rating = rateSlam(result);
@@ -760,7 +767,7 @@
         const cols = result.slammer === 1 ? ['#10b981', '#34d399', '#fff'] : ['#06b6d4', '#22d3ee', '#fff'];
         burst(ix, iy, cols, result.perfect ? 44 : 22, result.perfect ? 1.6 : 1);
         floatNumber(ix, iy - 26, '+' + result.points + (result.onFire ? ' 🔥' : ''), result.perfect ? '#fbbf24' : (result.slammer === 1 ? '#10b981' : '#06b6d4'), rating.tier >= 3);
-        if (result.bombTriggered) { toast('💣 BOMB CHAIN!'); burst(ix, iy, ['#ef4444', '#f59e0b', '#fff'], 38, 1.8); shake(1.6); }
+        if (result.bombTriggered) { toast('💣 BOMB CHAIN!'); burst(ix, iy, ['#ef4444', '#f59e0b', '#fff'], 38, 1.8); shake(1.6); haptic([0, 25, 30, 60]); }
         if (result.count >= 3) comboPop('COMBO ×' + result.count, rating.tier >= 3 ? '#fbbf24' : '#34d399');
         if (rating.tier >= 3) { sfx.perfect(); flash(); burst(ix, iy, ['#fbbf24', '#fde047', '#fff'], 34, 1.9); }
         else result.flipped.forEach((_, i) => sfx.collect(i));
@@ -869,7 +876,7 @@
       $('gameover-modal').classList.add('show');
       setBtn('waiting'); turnBanner.textContent = 'Game over'; renderScores();
       $('fire-vignette').classList.remove('on');
-      if (winner === 1) { sfx.win(); confettiRain(); } else if (winner === 2) sfx.lose();
+      if (winner === 1) { sfx.win(); confettiRain(); haptic([0, 60, 40, 60, 40, 90]); } else if (winner === 2) { sfx.lose(); haptic([0, 120, 60, 120]); }
     }
 
     /* ===================== ENTRY ===================== */
