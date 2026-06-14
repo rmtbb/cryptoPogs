@@ -83,6 +83,15 @@
     .tier-btn.cleared { border-color:rgba(16,185,129,0.4); }
     .tier-btn.cleared .tname::after { content:' ✓'; color:var(--accent); }
     .tier-btn.champ { border-color:var(--gold); box-shadow:0 0 16px rgba(251,191,36,0.3); }
+    .slammers { display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+    .slammer-chip { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:10px; border:1px solid var(--panel-bd); background:var(--panel); cursor:pointer; transition:all .15s ease; text-align:left; color:var(--text); width:100%; }
+    .slammer-chip:hover:not(.locked) { border-color:var(--accent-2); }
+    .slammer-chip.sel { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent), 0 0 14px rgba(16,185,129,0.25); background:rgba(16,185,129,0.07); }
+    .slammer-chip .si { font-size:1.4rem; width:28px; text-align:center; }
+    .slammer-chip .sinfo { flex:1; min-width:0; }
+    .slammer-chip .sname { font-weight:800; font-size:0.92rem; }
+    .slammer-chip .sdesc { font-size:0.7rem; color:var(--muted); }
+    .slammer-chip.locked { opacity:0.4; cursor:not-allowed; }
 
     /* ============================ GAME ============================ */
     #container { display: none; min-height: 100vh; flex-direction: column; align-items: center; padding: 16px; gap: 14px; }
@@ -223,6 +232,8 @@
       </div>
       <div class="ladder-title">⚔️ The Gauntlet — climb the ladder</div>
       <div class="ladder" id="ladder"></div>
+      <div class="ladder-title">🥏 Your slammer</div>
+      <div class="slammers" id="slammers"></div>
       <a href="/" class="btn ghost">← Back to site</a>
       <div class="how">
         <div><span class="step-n">1</span><b>AIM</b> — a line sweeps up &amp; down the stack. Tap to choose <b>where</b> to strike.</div>
@@ -365,6 +376,36 @@
     let currentTierIdx = 0;
     function getProgress() { try { return JSON.parse(localStorage.getItem('cryptopogs_gauntlet') || '{"cleared":0,"champion":false}'); } catch (e) { return { cleared: 0, champion: false }; } }
     function saveProgress(p) { try { localStorage.setItem('cryptopogs_gauntlet', JSON.stringify(p)); } catch (e) {} }
+
+    /* ===================== SLAMMERS (unlockable, with trade-offs) ===================== */
+    const SLAMMERS = [
+      { key: 'classic', name: 'Classic', icon: '🥏', desc: 'Balanced all-rounder',            unlock: 0,          blastBonus: 0,     capBonus: 0,    perfectAt: 90, fireAt: 3, gold: 2, aimSpeed: 1.0,  powerSpeed: 1.0 },
+      { key: 'heavy',   name: 'Heavy',   icon: '🔨', desc: '+Reach, but the meter runs fast',  unlock: 1,          blastBonus: 0.05,  capBonus: 0.05, perfectAt: 90, fireAt: 3, gold: 2, aimSpeed: 1.0,  powerSpeed: 1.45 },
+      { key: 'sniper',  name: 'Sniper',  icon: '🎯', desc: 'Easy PERFECT, tighter blast',      unlock: 2,          blastBonus: -0.04, capBonus: 0,    perfectAt: 80, fireAt: 3, gold: 2, aimSpeed: 0.85, powerSpeed: 1.0 },
+      { key: 'hothand', name: 'Hot Hand',icon: '🔥', desc: 'Catches fire faster (2 in a row)', unlock: 3,          blastBonus: 0,     capBonus: 0,    perfectAt: 90, fireAt: 2, gold: 2, aimSpeed: 1.0,  powerSpeed: 1.0 },
+      { key: 'midas',   name: 'Midas',   icon: '✨', desc: 'Gold pogs are worth 3pts',         unlock: 'champion', blastBonus: 0,     capBonus: 0,    perfectAt: 90, fireAt: 3, gold: 3, aimSpeed: 0.95, powerSpeed: 1.0 }
+    ];
+    const SLAMMER_MAP = {}; SLAMMERS.forEach(s => SLAMMER_MAP[s.key] = s);
+    function slammerUnlocked(s) { const pr = getProgress(); return s.unlock === 'champion' ? !!pr.champion : pr.cleared >= s.unlock; }
+    function getSelectedSlammer() {
+      let key; try { key = localStorage.getItem('cryptopogs_slammer') || 'classic'; } catch (e) { key = 'classic'; }
+      const s = SLAMMER_MAP[key];
+      return (s && slammerUnlocked(s)) ? s : SLAMMERS[0];
+    }
+    function selectSlammer(key) { try { localStorage.setItem('cryptopogs_slammer', key); } catch (e) {} renderSlammers(); }
+    function renderSlammers() {
+      const wrap = $('slammers'); if (!wrap) return;
+      const cur = getSelectedSlammer().key;
+      wrap.innerHTML = '';
+      SLAMMERS.forEach(s => {
+        const on = slammerUnlocked(s);
+        const el = document.createElement('button');
+        el.className = 'slammer-chip' + (on ? '' : ' locked') + (s.key === cur ? ' sel' : '');
+        el.innerHTML = `<span class="si">${on ? s.icon : '🔒'}</span><div class="sinfo"><div class="sname">${s.name}</div><div class="sdesc">${on ? s.desc : 'Unlock: ' + (s.unlock === 'champion' ? 'beat the gauntlet' : 'clear ' + TIERS[s.unlock - 1].name)}</div></div>`;
+        if (on) el.onclick = () => selectSlammer(s.key);
+        wrap.appendChild(el);
+      });
+    }
     function renderLadder() {
       const cleared = getProgress().cleared;
       const lad = $('ladder'); lad.innerHTML = '';
@@ -407,18 +448,21 @@
     // a 3+ scoring streak goes on-fire (wider reach + 1.5x points).
     function doSlam(power, impactY) {
       const p = clamp(power, 0, 100);
-      const perfect = p >= 90;
       const slammer = G.turn;
-      const onFire = G.streak[slammer] >= 3;
+      // player's slammer applies its traits; the CPU always uses Classic
+      const mod = slammer === 1 ? getSelectedSlammer() : SLAMMERS[0];
+      const perfect = p >= mod.perfectAt;
+      const onFire = G.streak[slammer] >= mod.fireAt;
       // blast = how far the shock reaches through the stack. Capped below the
       // stack's half-height so a centred hit can't clear everything — you must
-      // choose: centre for the most pogs, or aim off-centre to grab a gold 2x.
-      let blast = 0.16 + 0.26 * (p / 100);
+      // choose: centre for the most pogs, or aim off-centre to grab a gold.
+      let blast = 0.16 + 0.26 * (p / 100) + mod.blastBonus;
       if (perfect) blast += 0.06;
       if (onFire) blast += 0.04;
-      blast = Math.min(blast, 0.33);
+      blast = Math.min(blast, 0.33 + mod.capBonus);
       let baseChance = 0.42 + 0.45 * (p / 100);
       if (perfect) baseChance = 0.95;
+      const goldVal = mod.gold;
 
       const cy = centroidY();
       const aimErr = Math.abs(impactY - cy);
@@ -434,7 +478,7 @@
       const count = flipped.length;
       let points = 0;
       if (count > 0) {
-        let raw = flipped.reduce((s, pg) => s + pogPoints(pg), 0);
+        let raw = flipped.reduce((s, pg) => s + (pg.coin.rarity === 'legendary' ? goldVal : 1), 0);
         points = onFire ? Math.round(raw * 1.5) : raw;
         if (slammer === 1) { G.p1Score += points; flipped.forEach(p => G.p1Collected.push(p)); }
         else { G.p2Score += points; flipped.forEach(p => G.p2Collected.push(p)); }
@@ -558,7 +602,7 @@
         if (golds.length && Math.random() < T.gold) target = golds[Math.floor(Math.random() * golds.length)].ny;
         const impactY = clamp(target + (Math.random() - 0.5) * T.err * 2, 0.1, 0.9);
         const power = Math.random() < T.perfect ? (90 + Math.random() * 10) : (T.pMin + Math.random() * (T.pMax - T.pMin));
-        disc.style.display = 'flex'; disc.style.top = (centroidY() * 100) + '%';
+        disc.textContent = '🥏'; disc.style.display = 'flex'; disc.style.top = (centroidY() * 100) + '%';
         disc.animate([{ top: disc.style.top }, { top: (impactY * 100) + '%' }], { duration: 480, fill: 'forwards', easing: 'ease-in-out' });
         setTimeout(() => { disc.style.top = (impactY * 100) + '%'; resolveImpact(power, impactY); }, 500);
       }, 820);
@@ -567,9 +611,11 @@
     function startAim() {
       phase = 'aiming'; setBtn('aiming'); sfx.charge();
       aimVal = 0.12; aimDir = 1;
+      const sp = getSelectedSlammer().aimSpeed;
+      disc.textContent = getSelectedSlammer().icon;
       aimLine.style.display = 'block'; disc.style.display = 'flex';
       const step = () => {
-        aimVal += aimDir * 0.012;
+        aimVal += aimDir * 0.012 * sp;
         if (aimVal >= 0.88) { aimVal = 0.88; aimDir = -1; } if (aimVal <= 0.12) { aimVal = 0.12; aimDir = 1; }
         const pct = (aimVal * 100) + '%'; aimLine.style.top = pct; disc.style.top = pct;
         aimRAF = requestAnimationFrame(step);
@@ -580,7 +626,8 @@
       if (aimRAF) cancelAnimationFrame(aimRAF); aimRAF = null;
       phase = 'power'; setBtn('power'); sfx.charge();
       powerVal = 0; powerDir = 1; powerWrap.classList.add('live');
-      const step = () => { powerVal += powerDir * 2.6; if (powerVal >= 100) { powerVal = 100; powerDir = -1; } if (powerVal <= 0) { powerVal = 0; powerDir = 1; } powerNeedle.style.left = powerVal + '%'; powerRAF = requestAnimationFrame(step); };
+      const psp = getSelectedSlammer().powerSpeed;
+      const step = () => { powerVal += powerDir * 2.6 * psp; if (powerVal >= 100) { powerVal = 100; powerDir = -1; } if (powerVal <= 0) { powerVal = 0; powerDir = 1; } powerNeedle.style.left = powerVal + '%'; powerRAF = requestAnimationFrame(step); };
       powerRAF = requestAnimationFrame(step);
     }
     function lockPower() {
@@ -724,16 +771,23 @@
         if (currentTierIdx < TIERS.length - 1) { prog.cleared = currentTierIdx + 1; saveProgress(prog); advanced = true; }
         else if (!prog.champion) { prog.champion = true; saveProgress(prog); champion = true; }
       }
-      renderLadder();
+      renderLadder(); renderSlammers();
+
+      // did this win unlock a new slammer?
+      let newSlammer = null;
+      if (champion) newSlammer = SLAMMERS.find(s => s.unlock === 'champion');
+      else if (advanced) newSlammer = SLAMMERS.find(s => s.unlock === prog.cleared);
 
       const T = TIERS[currentTierIdx];
       const title = $('go-title'), sub = $('go-sub');
+      const slamNote = newSlammer ? ` · 🥏 ${newSlammer.name} slammer unlocked!` : '';
       if (winner === 0) { title.textContent = "It's a Tie!"; title.className = 'tie'; sub.textContent = `${T.name} held you to a draw.`; }
       else if (winner === 1) {
-        if (champion) { title.textContent = '👑 CHAMPION!'; title.className = 'win'; sub.textContent = 'You conquered the entire gauntlet!'; }
-        else if (advanced) { title.textContent = '🎉 Tier Cleared!'; title.className = 'win'; sub.textContent = `${TIERS[currentTierIdx + 1].name} unlocked!`; }
+        if (champion) { title.textContent = '👑 CHAMPION!'; title.className = 'win'; sub.textContent = 'You conquered the entire gauntlet!' + slamNote; }
+        else if (advanced) { title.textContent = '🎉 Tier Cleared!'; title.className = 'win'; sub.textContent = `${TIERS[currentTierIdx + 1].name} unlocked!` + slamNote; }
         else { title.textContent = '🏆 You Win!'; title.className = 'win'; sub.textContent = `Beat ${T.name} again.`; }
       } else { title.textContent = 'Defeated'; title.className = 'lose'; sub.textContent = `${T.icon} ${T.name} got you this time.`; }
+      if (newSlammer) setTimeout(() => toast(`🥏 New slammer: ${newSlammer.name}!`), 600);
 
       $('go-score').textContent = `${G.p1Score} — ${G.p2Score} pts`;
       const imgs = arr => arr.map(r => `<img src="${r.coin.image}" title="${r.coin.name}" onerror="this.style.visibility='hidden'">`).join('') || '<span style="color:#8b8ba7;font-size:.75rem">none</span>';
@@ -756,12 +810,12 @@
       renderBoard(); beginPlayerTurn();
       toast(`Vs ${T.name} — aim for the gold 2× pogs!`);
     }
-    function toMenu() { $('gameover-modal').classList.remove('show'); $('container').classList.remove('active'); $('start-overlay').style.display = 'flex'; renderRecord(); renderLadder(); G = null; phase = 'idle'; }
+    function toMenu() { $('gameover-modal').classList.remove('show'); $('container').classList.remove('active'); $('start-overlay').style.display = 'flex'; renderRecord(); renderLadder(); renderSlammers(); G = null; phase = 'idle'; }
     $('go-rematch').addEventListener('click', () => startMatch(currentTierIdx));
     $('go-next').addEventListener('click', () => startMatch(Math.min(TIERS.length - 1, currentTierIdx + 1)));
     $('go-menu').addEventListener('click', toMenu);
     $('leave-btn').addEventListener('click', toMenu);
-    renderLadder();
+    renderLadder(); renderSlammers();
   </script>
 </body>
 
