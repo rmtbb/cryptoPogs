@@ -35,12 +35,19 @@ The full game (`server.js`) adds account-based play and live head-to-head matche
 
 ## 🎮 How to play
 
-1. **Ante up** — you and your opponent each toss 6 pogs into a shared vertical **stack** of 12.
-2. **Aim** — a line sweeps up & down the stack; tap to choose *which height* to strike.
-3. **Power** — stop the meter in the gold **PERFECT** zone. Power = how far the shock reaches through the stack.
-4. **Keep the spoils** — pogs caught in the blast flip face-up and you keep 'em. Hunt the gold **2× pogs**, pop 💣 **bombs** (chain-flip neighbours), and bring power to crack 🔒 **locked** pogs. Chain good slams to go 🔥 **on fire** (×1.5 points). Higher score wins.
+Real pogs: a stack sits in a pile on the table, you **throw your slammer down** onto it, and the stack **scatters** — the pogs that land face-up are yours.
 
-**Single-player demo** also has a **gauntlet** (Rookie → Legend) and **unlockable slammers** with trade-offs.
+1. **Aim** — your slammer sways over the pile; tap to drop it **dead-centre** (the squarest hit flips the most).
+2. **Power** — stop the meter in the gold **PERFECT** zone. A square, hard throw scatters most of the stack.
+3. **Keep the spoils** — face-up pogs fly to your collection. Hunt gold **2× pogs**, pop 💣 **bombs** (scatter extra pogs), bring power to crack 🔒 **locked** pogs, and chain slams to go 🔥 **on fire** (×1.5 points). Higher score wins.
+
+### Modes (single-player demo)
+- **⚔️ Gauntlet** — climb Rookie → Pro → Master → Legend; each tier unlocks the next opponent and a new slammer.
+- **⚡ Slam Rush** — endless score-chase; clear the pile for +5, three whiffs ends the run.
+- **🗓 Daily Challenge** — the same seeded stack for everyone each day; beat your best, share the score.
+- **🥏 Slammers** — 5 unlockable kinis (Heavy, Sniper, Hot Hand, Midas…) with real trade-offs.
+
+The full multiplayer game adds real-time human-vs-human play with the same mechanic.
 
 | In-game | Victory |
 |---|---|
