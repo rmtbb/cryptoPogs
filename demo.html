@@ -7,7 +7,7 @@
   <title>Crypto Pogs — Single Player Demo</title>
 
   <meta property="og:title" content="Crypto Pogs: The Game (Demo)" />
-  <meta property="og:description" content="Play a quick single-player round of Crypto Pogs right in your browser — charge your slam, hit the PERFECT zone, and clean out the CPU." />
+  <meta property="og:description" content="Play a quick single-player round of Crypto Pogs right in your browser — aim your slam, hit the PERFECT zone, and clean out the CPU." />
   <meta property="og:image" content="https://cryptopogs.remotebb.com/og-preview.png" />
   <meta property="og:url" content="https://cryptopogs.remotebb.com/demo.html" />
   <meta property="og:type" content="website" />
@@ -52,7 +52,7 @@
     .demo-tag .dot { width:8px; height:8px; border-radius:50%; background:var(--accent); box-shadow:0 0 10px var(--accent); animation:pulse 1.6s infinite; }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
 
-    .start-card { width: min(420px, 94vw); text-align: center; }
+    .start-card { width: min(440px, 94vw); text-align: center; }
     .record { display:flex; gap:14px; justify-content:center; color:var(--muted); font-size:0.9rem; margin-bottom:18px; }
     .record b { color: var(--text); }
 
@@ -65,8 +65,9 @@
     .btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
     .btn:active { transform: scale(0.98); }
     .btn.ghost { background: var(--panel); border: 1px solid var(--panel-bd); box-shadow: none; font-family:'Inter'; font-size:0.95rem; padding:12px; letter-spacing:0; }
-    .how { margin-top:14px; color:var(--muted); font-size:0.85rem; line-height:1.6; }
+    .how { margin-top:14px; color:var(--muted); font-size:0.86rem; line-height:1.7; text-align:left; }
     .how b { color: var(--gold); }
+    .how .step-n { display:inline-flex; width:20px;height:20px; border-radius:50%; background:var(--accent); color:#06281c; font-weight:900; font-size:0.72rem; align-items:center; justify-content:center; margin-right:6px; vertical-align:middle; }
 
     /* ============================ GAME ============================ */
     #container { display: none; min-height: 100vh; flex-direction: column; align-items: center; padding: 16px; gap: 14px; }
@@ -76,17 +77,20 @@
     .icon-btn { background: var(--panel); border: 1px solid var(--panel-bd); color: var(--text); width: 40px; height: 40px; border-radius: 10px; cursor: pointer; font-size: 1.1rem; }
 
     #scoreboard { width: min(720px, 100%); display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; }
-    .pscore { background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)); border: 1px solid var(--panel-bd); border-radius: 14px; padding: 12px 14px; text-align: center; transition: all .25s ease; }
+    .pscore { background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)); border: 1px solid var(--panel-bd); border-radius: 14px; padding: 12px 14px; text-align: center; transition: all .25s ease; position:relative; }
     .pscore.active-turn { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 24px rgba(16,185,129,0.3); transform: translateY(-2px); }
     .pscore .pname { font-weight: 800; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .pscore.p1 .pname { color: var(--accent); }
     .pscore.p2 .pname { color: var(--accent-2); }
     .pscore .pnum { font-size: 2.2rem; line-height: 1; margin-top: 4px; }
+    .pscore .fire { position:absolute; top:6px; right:10px; font-size:0.9rem; opacity:0; transition:opacity .2s; }
+    .pscore.on-fire .fire { opacity:1; animation: firewob .6s infinite; }
+    @keyframes firewob { 0%,100%{transform:scale(1) rotate(-6deg)} 50%{transform:scale(1.2) rotate(6deg)} }
     .vs { font-family:'Russo One'; color: var(--muted); font-size: 1.1rem; }
 
     #turn-banner { min-height: 28px; font-weight: 800; font-size: 1.05rem; text-align: center; transition: color .2s ease; }
 
-    #board { width: min(960px, 100%); display: grid; grid-template-columns: 1fr minmax(280px, 360px) 1fr; gap: 12px; align-items: start; }
+    #board { width: min(960px, 100%); display: grid; grid-template-columns: 1fr minmax(300px, 380px) 1fr; gap: 12px; align-items: start; }
     @media (max-width: 820px) { #board { grid-template-columns: 1fr; } .side-panel { order: 2; } #game-col { order: 1; } }
     .side-panel { background: var(--panel); border: 1px solid var(--panel-bd); border-radius: 14px; padding: 12px; }
     .side-panel h3 { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin: 4px 0 6px; }
@@ -95,46 +99,73 @@
     .side-pogs img { width: 30px; height: 30px; border-radius: 50%; background: #000; }
 
     #game-col { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-    #stack-area { position: relative; width: 100%; height: 300px; display: flex; align-items: flex-end; justify-content: center; perspective: 900px; }
-    #stack-shadow { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); width: 120px; height: 26px; border-radius: 50%; background: radial-gradient(ellipse, rgba(0,0,0,0.55), transparent 70%); }
-    #stack { position: relative; width: 116px; height: 100%; margin: 0 auto; transition: transform .12s ease; }
+
+    /* ---------- Arena (the pile) ---------- */
+    #arena {
+      position: relative; width: 100%; max-width: 360px; height: 260px; margin: 14px auto 0;
+      border-radius: 18px; overflow: visible;
+      background:
+        radial-gradient(ellipse at 50% 88%, rgba(124,58,237,0.16), transparent 70%),
+        radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.025), transparent 72%);
+      border: 1px solid var(--panel-bd);
+    }
+    #arena::after { /* ground shadow */
+      content:''; position:absolute; left:50%; bottom:14px; transform:translateX(-50%);
+      width:75%; height:24px; border-radius:50%; background:radial-gradient(ellipse, rgba(0,0,0,0.5), transparent 70%);
+    }
+    #pile { position:absolute; inset:0; }
     .pog {
-      width: 110px; height: 110px; border-radius: 50%; position: absolute; left: 3px;
+      position: absolute; width: 58px; height: 58px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
       background: radial-gradient(circle at 35% 30%, #2a2748, #15122b 75%);
-      border: 3px solid rgba(255,255,255,0.15); box-shadow: 0 6px 14px rgba(0,0,0,0.5);
-      transition: transform .15s ease, box-shadow .2s ease, opacity .2s ease;
+      border: 3px solid rgba(255,255,255,0.15); box-shadow: 0 5px 12px rgba(0,0,0,0.5);
+      transition: opacity .2s ease;
     }
-    .pog img { width: 64px; height: 64px; border-radius: 50%; }
-    .pog .sym { position: absolute; bottom: 6px; font-size: 0.6rem; font-weight: 800; color:#fff; background: rgba(0,0,0,0.55); padding: 1px 7px; border-radius: 999px; }
-    .pog.face-down img { filter: grayscale(0.4) brightness(0.7); }
+    .pog img { width: 34px; height: 34px; border-radius: 50%; pointer-events:none; }
+    .pog .sym { position: absolute; bottom: -2px; font-size: 0.5rem; font-weight: 800; color:#fff; background: rgba(0,0,0,0.6); padding: 0 5px; border-radius: 999px; }
+    .pog.face-down img { filter: grayscale(0.4) brightness(0.65); }
     .pog.face-down .sym { display: none; }
     .pog.r-common { border-color: rgba(148,163,184,0.6); }
-    .pog.r-rare { border-color: #38bdf8; box-shadow: 0 6px 14px rgba(0,0,0,0.5), 0 0 14px rgba(56,189,248,0.5); }
-    .pog.r-epic { border-color: #c084fc; box-shadow: 0 6px 14px rgba(0,0,0,0.5), 0 0 18px rgba(192,132,252,0.65); }
-    .pog.r-legendary { border-color: var(--gold); box-shadow: 0 6px 14px rgba(0,0,0,0.5), 0 0 22px rgba(251,191,36,0.8); }
+    .pog.r-rare { border-color: #38bdf8; box-shadow: 0 5px 12px rgba(0,0,0,0.5), 0 0 12px rgba(56,189,248,0.5); }
+    .pog.r-epic { border-color: #c084fc; box-shadow: 0 5px 12px rgba(0,0,0,0.5), 0 0 15px rgba(192,132,252,0.65); }
+    .pog.r-legendary { border-color: var(--gold); box-shadow: 0 5px 12px rgba(0,0,0,0.5), 0 0 18px rgba(251,191,36,0.8); }
     .pog.face-up.r-legendary { animation: legend 1.5s infinite; }
     @keyframes legend { 0%,100%{ filter: brightness(1);} 50%{ filter: brightness(1.25);} }
 
-    #control-zone { width: min(360px, 92%); display: flex; flex-direction: column; gap: 10px; align-items: center; }
+    #aim-line { position:absolute; top:-6px; bottom:18px; width:3px; transform:translateX(-50%); display:none; z-index:40;
+      background: linear-gradient(var(--accent), rgba(16,185,129,0.1)); box-shadow: 0 0 12px var(--accent); }
+    #aim-line::before { content:''; position:absolute; left:50%; bottom:0; transform:translateX(-50%); width:14px; height:14px; border:2px solid var(--accent); border-radius:50%; box-shadow:0 0 10px var(--accent); }
+    #slammer-disc {
+      position:absolute; top:-4%; width:64px; height:64px; transform:translate(-50%,-50%); border-radius:50%;
+      display:none; align-items:center; justify-content:center; z-index:50; pointer-events:none;
+      background: radial-gradient(circle at 35% 28%, #4a3c86, #1a1438 78%); border:3px solid var(--accent);
+      box-shadow: 0 0 24px rgba(16,185,129,0.75), inset 0 -6px 14px rgba(0,0,0,0.55); font-size:1.5rem; color:#fff;
+    }
+    .shockwave { position:absolute; transform:translate(-50%,-50%); border-radius:50%; border:3px solid var(--accent); pointer-events:none; z-index:45; box-shadow:0 0 22px rgba(16,185,129,0.6); }
+    .shockwave.perfect { border-color: var(--gold); box-shadow:0 0 28px rgba(251,191,36,0.85); }
+    .shockwave.cpu { border-color: var(--accent-2); box-shadow:0 0 22px rgba(6,182,212,0.6); }
+
+    #control-zone { width: min(380px, 96%); display: flex; flex-direction: column; gap: 10px; align-items: center; }
     #power-wrap {
       width: 100%; height: 26px; border-radius: 999px; position: relative; overflow: hidden;
       background: linear-gradient(90deg, #ef4444 0%, #f59e0b 45%, #10b981 78%, #fbbf24 90%, #fde047 100%);
-      border: 1px solid rgba(255,255,255,0.15); opacity: 0.35; transition: opacity .2s ease; box-shadow: inset 0 2px 6px rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.15); opacity: 0.3; transition: opacity .2s ease; box-shadow: inset 0 2px 6px rgba(0,0,0,0.4);
     }
     #power-wrap.live { opacity: 1; }
     #power-needle { position: absolute; top: -2px; bottom: -2px; width: 5px; left: 0%; background: #fff; border-radius: 3px; box-shadow: 0 0 10px #fff, 0 0 4px #fff; }
     .perfect-label { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); font-size: 0.55rem; font-weight: 900; color: rgba(0,0,0,0.6); letter-spacing: 0.5px; }
-    #power-hint { font-size: 0.74rem; color: var(--muted); min-height: 16px; }
+    #power-hint { font-size: 0.78rem; color: var(--muted); min-height: 16px; text-align:center; }
+    #power-hint b { color: var(--gold); }
     #slammer {
-      width: 100%; padding: 16px; border: none; border-radius: 14px; cursor: pointer; font-family:'Russo One'; font-size: 1.3rem; color: #fff; letter-spacing: 1px;
-      background: linear-gradient(135deg, var(--accent), #059669); box-shadow: 0 10px 26px rgba(16,185,129,0.4); transition: transform .1s ease, filter .2s ease;
+      width: 100%; padding: 16px; border: none; border-radius: 14px; cursor: pointer; font-family:'Russo One'; font-size: 1.25rem; color: #fff; letter-spacing: 1px;
+      background: linear-gradient(135deg, var(--accent), #059669); box-shadow: 0 10px 26px rgba(16,185,129,0.4); transition: transform .1s ease, filter .2s ease, background .2s ease;
     }
     #slammer:hover { filter: brightness(1.1); }
     #slammer:active { transform: scale(0.97); }
-    #slammer.charging { background: linear-gradient(135deg, var(--gold), #d97706); animation: chargepulse .5s infinite; }
+    #slammer.aim { background: linear-gradient(135deg, var(--accent-2), #0891b2); box-shadow:0 10px 26px rgba(6,182,212,0.45); animation: chargepulse .5s infinite; }
+    #slammer.power { background: linear-gradient(135deg, var(--gold), #d97706); box-shadow:0 10px 26px rgba(251,191,36,0.45); animation: chargepulse .4s infinite; }
     #slammer.waiting { background: var(--panel); color: var(--muted); cursor: default; box-shadow: none; }
-    @keyframes chargepulse { 0%,100%{ box-shadow: 0 10px 26px rgba(251,191,36,0.4);} 50%{ box-shadow: 0 10px 40px rgba(251,191,36,0.8);} }
+    @keyframes chargepulse { 0%,100%{ filter:brightness(1);} 50%{ filter:brightness(1.25);} }
 
     #gameover-modal { display: none; position: fixed; inset: 0; z-index: 3500; background: rgba(5,4,15,0.82); backdrop-filter: blur(6px); align-items: center; justify-content: center; padding: 20px; }
     #gameover-modal.show { display: flex; animation: fadein .3s ease; }
@@ -177,8 +208,9 @@
       <button id="play-btn" class="btn">▶ PLAY VS CPU</button>
       <a href="/" class="btn ghost" style="margin-top:10px;">← Back to site</a>
       <div class="how">
-        Tap <b>SLAM</b> to start the power meter, tap again to lock it.<br>
-        Land the needle in the gold <b>PERFECT</b> zone for the biggest flips.
+        <div><span class="step-n">1</span><b>AIM</b> — a line sweeps the pile. Tap to drop your slammer where the pogs are thickest.</div>
+        <div style="margin-top:6px;"><span class="step-n">2</span><b>POWER</b> — stop the meter in the gold <b>PERFECT</b> zone. More power = bigger blast.</div>
+        <div style="margin-top:6px;"><span class="step-n">3</span>Pogs caught in the blast flip <b>face-up</b> and you keep 'em. Chain good slams to go <b style="color:#ef7d3a">🔥 on fire</b>!</div>
       </div>
       <div class="how" style="margin-top:12px; font-size:0.78rem; opacity:0.8;">
         This is the single-player browser demo. The full game adds real-time
@@ -199,11 +231,13 @@
 
     <div id="scoreboard">
       <div class="pscore p1" id="p1-card">
+        <div class="fire">🔥</div>
         <div class="pname" id="p1-name">You</div>
         <div class="pnum" id="p1-score">0</div>
       </div>
       <div class="vs">VS</div>
       <div class="pscore p2" id="p2-card">
+        <div class="fire">🔥</div>
         <div class="pname" id="p2-name">CPU</div>
         <div class="pnum" id="p2-score">0</div>
       </div>
@@ -221,16 +255,17 @@
       </div>
 
       <div id="game-col">
-        <div id="stack-area">
-          <div id="stack-shadow"></div>
-          <div id="stack"></div>
+        <div id="arena">
+          <div id="pile"></div>
+          <div id="aim-line"></div>
+          <div id="slammer-disc">✦</div>
         </div>
         <div id="control-zone">
           <div id="power-wrap">
             <div id="power-needle"></div>
             <div class="perfect-label">PERFECT</div>
           </div>
-          <div id="power-hint">Tap SLAM to charge your throw</div>
+          <div id="power-hint">Tap SLAM to line up your throw</div>
           <button id="slammer">SLAM!</button>
         </div>
       </div>
@@ -293,46 +328,71 @@
       { id: "pepe", symbol: "pepe", name: "Pepe", rarity: "common", image: "https://assets.coingecko.com/coins/images/29850/large/pepe-token.jpeg" }
     ];
     const randCoin = () => COIN_POOL[Math.floor(Math.random() * COIN_POOL.length)];
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+    const $ = id => document.getElementById(id);
 
-    /* ===================== GAME LOGIC (ported from server.js) ===================== */
-    function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+    /* ===================== GAME STATE ===================== */
+    let G = null;
 
-    function powerToChance(power) {
-      const p = Math.max(0, Math.min(100, Number(power) || 0));
-      const perfect = p >= 90;
-      const chance = perfect ? 0.92 : 0.20 + 0.62 * (p / 100);
-      return { chance, perfect, power: p };
+    function scatter() {
+      // loose cluster, centred, with jitter — gives a "pile" you aim into.
+      // Spread wide enough that no single blast clears the whole board — you
+      // have to keep aiming at the remaining cluster.
+      return { nx: clamp(0.5 + (Math.random() - 0.5) * 0.80, 0.1, 0.9), ny: clamp(0.5 + (Math.random() - 0.5) * 0.6, 0.22, 0.78) };
     }
-
-    let G = null; // game state
-
     function newGame() {
-      const p1Contrib = shuffle(Array.from({ length: 6 }, randCoin));
-      const p2Contrib = shuffle(Array.from({ length: 6 }, randCoin));
+      const p1 = Array.from({ length: 6 }, randCoin), p2 = Array.from({ length: 6 }, randCoin);
       const pogs = [];
-      p1Contrib.forEach((c, i) => pogs.push({ id: i, owner: 1, coin: c, faceUp: false }));
-      p2Contrib.forEach((c, i) => pogs.push({ id: i + 6, owner: 2, coin: c, faceUp: false }));
+      p1.forEach((c, i) => { const s = scatter(); pogs.push({ id: i, owner: 1, coin: c, faceUp: false, nx: s.nx, ny: s.ny }); });
+      p2.forEach((c, i) => { const s = scatter(); pogs.push({ id: i + 6, owner: 2, coin: c, faceUp: false, nx: s.nx, ny: s.ny }); });
       const original = JSON.parse(JSON.stringify(pogs));
-      shuffle(pogs);
-      G = {
-        pogs, original, turn: 1, // 1 = you, 2 = CPU
-        p1Score: 0, p2Score: 0, p1Collected: [], p2Collected: [],
-        over: false
-      };
+      G = { pogs, original, turn: 1, p1Score: 0, p2Score: 0, p1Collected: [], p2Collected: [], over: false, streak: { 1: 0, 2: 0 } };
     }
 
-    function doSlam(power) {
-      const { chance, perfect } = powerToChance(power);
-      G.pogs.forEach(p => { p.faceUp = Math.random() < chance; });
-      const flipped = G.pogs.filter(p => p.faceUp);
+    function centroidX() { return G.pogs.length ? G.pogs.reduce((s, p) => s + p.nx, 0) / G.pogs.length : 0.5; }
+
+    // Core resolution: aim (impactX 0..1) + power (0..100) -> which pogs flip
+    function doSlam(power, impactX) {
+      const p = clamp(power, 0, 100);
+      const perfect = p >= 90;
+      const slammer = G.turn;
+      let blast = 0.12 + 0.26 * (p / 100);          // radius as fraction of arena width
+      if (perfect) blast += 0.10;
+      if (G.streak[slammer] >= 3) blast += 0.06;     // on-fire bonus
+      let baseChance = 0.42 + 0.45 * (p / 100);
+      if (perfect) baseChance = 0.95;
+
+      const cx = centroidX();
+      const aimErr = Math.abs(impactX - cx);
+      const accuracy = aimErr < 0.09 ? 'bullseye' : (aimErr < 0.2 ? 'close' : 'off');
+
+      const flipped = [];
+      G.pogs.forEach(pog => {
+        const dx = pog.nx - impactX;
+        const dy = (pog.ny - 0.5) * 0.55;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        const chance = d <= blast ? baseChance * (1 - (d / blast) * 0.55) : 0.05;
+        pog.faceUp = Math.random() < chance;
+        if (pog.faceUp) flipped.push(pog);
+      });
       const count = flipped.length;
       if (count > 0) {
-        if (G.turn === 1) { G.p1Score += count; flipped.forEach(p => G.p1Collected.push(p)); }
+        if (slammer === 1) { G.p1Score += count; flipped.forEach(p => G.p1Collected.push(p)); }
         else { G.p2Score += count; flipped.forEach(p => G.p2Collected.push(p)); }
-      }
+        G.streak[slammer]++;
+      } else { G.streak[slammer] = 0; }
       G.pogs = G.pogs.filter(p => !p.faceUp);
-      if (G.pogs.length > 0) shuffle(G.pogs);
-      return { count, flipped, slammer: G.turn, perfect: perfect && count > 0 };
+      return { count, flipped, slammer, perfect: perfect && count > 0, accuracy, impactX, blast, power: p };
+    }
+
+    function rateSlam(r) {
+      if (r.count === 0) return { label: 'Whiff! 0 flipped', tier: 0 };
+      if (r.perfect && r.accuracy === 'bullseye') return { label: '💥 PERFECT BULLSEYE!', tier: 4 };
+      if (r.perfect) return { label: '⚡ PERFECT SLAM!', tier: 3 };
+      if (r.count >= 5) return { label: '🔥 HUGE SLAM!', tier: 3 };
+      if (r.accuracy === 'bullseye' && r.count >= 3) return { label: '🎯 Bullseye!', tier: 2 };
+      if (r.count >= 3) return { label: 'Nice slam!', tier: 2 };
+      return { label: 'Solid hit', tier: 1 };
     }
 
     /* ===================== SOUND ===================== */
@@ -341,23 +401,22 @@
     function tone(freq, dur, type = 'sine', vol = 0.2, delay = 0) {
       if (!soundOn) return;
       try {
-        const c = ac(); const t = c.currentTime + delay;
-        const osc = c.createOscillator(), g = c.createGain();
+        const c = ac(); const t = c.currentTime + delay; const osc = c.createOscillator(), g = c.createGain();
         osc.type = type; osc.frequency.setValueAtTime(freq, t);
         g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.01); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
         osc.connect(g); g.connect(c.destination); osc.start(t); osc.stop(t + dur + 0.02);
       } catch (e) {}
     }
     const sfx = {
+      tick() { tone(320, 0.03, 'square', 0.04); },
       charge() { tone(180, 0.08, 'square', 0.05); },
       slam() { tone(70, 0.18, 'square', 0.35); tone(120, 0.12, 'triangle', 0.2); },
-      collect(i = 0) { tone(520 + i * 90, 0.14, 'sine', 0.18, i * 0.05); },
+      collect(i = 0) { tone(520 + i * 80, 0.14, 'sine', 0.16, i * 0.04); },
       perfect() { [660, 880, 1100, 1320].forEach((f, i) => tone(f, 0.16, 'triangle', 0.22, i * 0.06)); },
       win() { [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 0.3, 'sawtooth', 0.18, i * 0.12)); },
       lose() { [400, 330, 262, 196].forEach((f, i) => tone(f, 0.25, 'sine', 0.18, i * 0.12)); },
-      whiff() { tone(160, 0.2, 'sine', 0.15); }
+      whiff() { tone(150, 0.22, 'sine', 0.15); }
     };
-    const $ = id => document.getElementById(id);
     $('sound-btn').addEventListener('click', () => { soundOn = !soundOn; $('sound-btn').textContent = soundOn ? '🔊' : '🔇'; if (soundOn) tone(660, 0.1, 'sine', 0.2); });
 
     /* ===================== PARTICLES ===================== */
@@ -366,16 +425,12 @@
     function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
     resizeCanvas(); window.addEventListener('resize', resizeCanvas);
     function burst(x, y, colors, count = 24, power = 1) {
-      for (let i = 0; i < count; i++) {
-        const a = Math.random() * Math.PI * 2; const sp = (2 + Math.random() * 7) * power;
-        particles.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 2, life: 1, size: 3 + Math.random() * 5, color: colors[(Math.random() * colors.length) | 0], rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.4 });
-      }
+      for (let i = 0; i < count; i++) { const a = Math.random() * Math.PI * 2; const sp = (2 + Math.random() * 7) * power;
+        particles.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 2, life: 1, size: 3 + Math.random() * 5, color: colors[(Math.random() * colors.length) | 0], rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.4 }); }
     }
     function confettiRain() {
       const cols = ['#10b981', '#06b6d4', '#7c3aed', '#fbbf24', '#ef4444', '#fff'];
-      for (let i = 0; i < 140; i++) {
-        particles.push({ x: Math.random() * canvas.width, y: -20 - Math.random() * canvas.height * 0.5, vx: (Math.random() - 0.5) * 3, vy: 2 + Math.random() * 4, life: 1, decay: 0.004 + Math.random() * 0.004, size: 5 + Math.random() * 6, color: cols[(Math.random() * cols.length) | 0], rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3, rect: true });
-      }
+      for (let i = 0; i < 140; i++) { particles.push({ x: Math.random() * canvas.width, y: -20 - Math.random() * canvas.height * 0.5, vx: (Math.random() - 0.5) * 3, vy: 2 + Math.random() * 4, life: 1, decay: 0.004 + Math.random() * 0.004, size: 5 + Math.random() * 6, color: cols[(Math.random() * cols.length) | 0], rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3, rect: true }); }
     }
     function fxLoop() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -389,9 +444,9 @@
       requestAnimationFrame(fxLoop);
     }
     fxLoop();
-    function floatNumber(x, y, text, color) {
+    function floatNumber(x, y, text, color, big) {
       const el = document.createElement('div'); el.className = 'float-num'; el.textContent = text;
-      el.style.left = x + 'px'; el.style.top = y + 'px'; el.style.color = color || '#fbbf24'; el.style.fontSize = '1.8rem';
+      el.style.left = x + 'px'; el.style.top = y + 'px'; el.style.color = color || '#fbbf24'; el.style.fontSize = (big ? 2.4 : 1.8) + 'rem';
       document.body.appendChild(el);
       el.animate([{ transform: 'translateY(0) scale(0.6)', opacity: 0 }, { transform: 'translateY(-30px) scale(1.4)', opacity: 1, offset: 0.3 }, { transform: 'translateY(-90px) scale(1)', opacity: 0 }], { duration: 1100, easing: 'cubic-bezier(.2,1,.3,1)' });
       setTimeout(() => el.remove(), 1100);
@@ -399,124 +454,198 @@
     function shake(intensity = 1) {
       $('container').animate([{ transform: 'translate(0,0)' }, { transform: `translate(${6 * intensity}px, ${-4 * intensity}px)` }, { transform: `translate(${-5 * intensity}px, ${5 * intensity}px)` }, { transform: `translate(${4 * intensity}px, ${2 * intensity}px)` }, { transform: 'translate(0,0)' }], { duration: 280, easing: 'ease-out' });
     }
-    function toast(msg, ms = 2200) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), ms); }
+    function toast(msg, ms = 2000) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), ms); }
 
-    /* ===================== RECORD (localStorage) ===================== */
+    /* ===================== RECORD ===================== */
     function getRecord() { try { return JSON.parse(localStorage.getItem('cryptopogs_demo_record') || '{"wins":0,"losses":0}'); } catch (e) { return { wins: 0, losses: 0 }; } }
     function saveRecord(r) { try { localStorage.setItem('cryptopogs_demo_record', JSON.stringify(r)); } catch (e) {} }
     function renderRecord() { const r = getRecord(); $('rec-wins').textContent = r.wins; $('rec-losses').textContent = r.losses; }
     renderRecord();
 
-    /* ===================== POWER METER & FLOW ===================== */
+    /* ===================== TURN / INPUT FLOW ===================== */
     const slammerEl = $('slammer'), powerWrap = $('power-wrap'), powerNeedle = $('power-needle'), powerHint = $('power-hint'), turnBanner = $('turn-banner');
-    let charging = false, powerValue = 0, powerDir = 1, powerRAF = null, myTurn = false, isAnimating = false, pendingRender = false;
+    const arenaEl = $('arena'), aimLine = $('aim-line'), disc = $('slammer-disc');
+    let phase = 'idle'; // idle | ready | aiming | power | resolving | cpu
+    let myTurn = false;
+    let aimVal = 0.5, aimDir = 1, aimRAF = null;
+    let powerVal = 0, powerDir = 1, powerRAF = null;
 
-    function setSlamMode(mode) {
+    function setBtn(mode) {
       slammerEl.className = '';
-      if (mode === 'ready') { slammerEl.textContent = 'SLAM!'; slammerEl.disabled = false; powerHint.textContent = 'Tap SLAM to charge your throw'; }
-      else if (mode === 'waiting') { slammerEl.classList.add('waiting'); slammerEl.textContent = 'CPU is slamming…'; slammerEl.disabled = true; powerHint.textContent = ''; stopCharging(); }
-      else if (mode === 'charging') { slammerEl.classList.add('charging'); slammerEl.textContent = 'LOCK IT! 🎯'; powerHint.textContent = 'Tap again — aim for the gold PERFECT zone!'; }
-    }
-    function startCharging() {
-      charging = true; powerValue = 0; powerDir = 1; powerWrap.classList.add('live'); setSlamMode('charging'); sfx.charge();
-      const step = () => { powerValue += powerDir * 2.6; if (powerValue >= 100) { powerValue = 100; powerDir = -1; } if (powerValue <= 0) { powerValue = 0; powerDir = 1; } powerNeedle.style.left = powerValue + '%'; powerRAF = requestAnimationFrame(step); };
-      powerRAF = requestAnimationFrame(step);
-    }
-    function stopCharging() { charging = false; if (powerRAF) cancelAnimationFrame(powerRAF); powerRAF = null; powerWrap.classList.remove('live'); }
-    function lockAndSlam() {
-      const power = Math.round(powerValue); stopCharging(); slammerEl.classList.remove('charging'); slammerEl.textContent = '💥'; slammerEl.disabled = true; myTurn = false;
-      resolveSlam(power);
-    }
-    slammerEl.addEventListener('click', () => { if (!myTurn || slammerEl.disabled) return; ac(); if (!charging) startCharging(); else lockAndSlam(); });
-
-    function resolveSlam(power) {
-      const result = doSlam(power);
-      showSlamFx(result);
-      // advance after the collection animation has had time to play
-      setTimeout(() => {
-        if (G.pogs.length === 0) { endGame(); return; }
-        G.turn = G.turn === 1 ? 2 : 1;
-        renderGame();
-        if (G.turn === 2) cpuTurn();
-      }, result.count > 0 ? 760 : 350);
+      if (mode === 'ready') { slammerEl.textContent = '🎯 AIM'; slammerEl.disabled = false; powerHint.textContent = 'Tap to start aiming'; }
+      else if (mode === 'aiming') { slammerEl.classList.add('aim'); slammerEl.textContent = 'LOCK AIM'; slammerEl.disabled = false; powerHint.textContent = 'Tap to drop your slammer on the pile'; }
+      else if (mode === 'power') { slammerEl.classList.add('power'); slammerEl.textContent = 'LOCK POWER'; slammerEl.disabled = false; powerHint.innerHTML = 'Stop the meter in the gold <b>PERFECT</b> zone!'; }
+      else if (mode === 'resolving') { slammerEl.textContent = '💥'; slammerEl.disabled = true; powerHint.textContent = ''; }
+      else if (mode === 'waiting') { slammerEl.classList.add('waiting'); slammerEl.textContent = 'CPU is slamming…'; slammerEl.disabled = true; powerHint.textContent = ''; }
     }
 
-    function cpuTurn() {
-      setSlamMode('waiting');
+    function beginPlayerTurn() {
+      myTurn = true; phase = 'ready'; setBtn('ready');
+      turnBanner.textContent = '🎯 Your turn — line up your slam!'; turnBanner.style.color = 'var(--accent)';
+    }
+    function beginCpuTurn() {
+      myTurn = false; phase = 'cpu'; setBtn('waiting');
       turnBanner.textContent = "CPU's turn…"; turnBanner.style.color = 'var(--muted)';
       setTimeout(() => {
         if (!G || G.over) return;
-        const roll = Math.random();
-        const cpuPower = roll < 0.18 ? (90 + Math.random() * 10) : (45 + Math.random() * 40);
-        const result = doSlam(cpuPower);
+        const impactX = clamp(centroidX() + (Math.random() - 0.5) * 0.22, 0.1, 0.9);
+        const power = Math.random() < 0.15 ? (90 + Math.random() * 10) : (50 + Math.random() * 38);
+        disc.style.display = 'flex'; disc.style.top = '-4%'; disc.style.left = '50%';
+        disc.animate([{ left: '50%' }, { left: (impactX * 100) + '%' }], { duration: 520, fill: 'forwards', easing: 'ease-in-out' });
+        setTimeout(() => { disc.style.left = (impactX * 100) + '%'; resolveImpact(power, impactX); }, 540);
+      }, 850);
+    }
+
+    function startAim() {
+      phase = 'aiming'; setBtn('aiming'); sfx.charge();
+      aimVal = 0.1; aimDir = 1;
+      aimLine.style.display = 'block'; disc.style.display = 'flex'; disc.style.top = '-4%';
+      const step = () => {
+        aimVal += aimDir * 0.0115;
+        if (aimVal >= 0.9) { aimVal = 0.9; aimDir = -1; } if (aimVal <= 0.1) { aimVal = 0.1; aimDir = 1; }
+        const pct = (aimVal * 100) + '%'; aimLine.style.left = pct; disc.style.left = pct;
+        aimRAF = requestAnimationFrame(step);
+      };
+      aimRAF = requestAnimationFrame(step);
+    }
+    function lockAim() {
+      if (aimRAF) cancelAnimationFrame(aimRAF); aimRAF = null;
+      phase = 'power'; setBtn('power'); sfx.charge();
+      powerVal = 0; powerDir = 1; powerWrap.classList.add('live');
+      const step = () => { powerVal += powerDir * 2.6; if (powerVal >= 100) { powerVal = 100; powerDir = -1; } if (powerVal <= 0) { powerVal = 0; powerDir = 1; } powerNeedle.style.left = powerVal + '%'; powerRAF = requestAnimationFrame(step); };
+      powerRAF = requestAnimationFrame(step);
+    }
+    function lockPower() {
+      if (powerRAF) cancelAnimationFrame(powerRAF); powerRAF = null; powerWrap.classList.remove('live');
+      aimLine.style.display = 'none';
+      myTurn = false; setBtn('resolving');
+      resolveImpact(Math.round(powerVal), aimVal);
+    }
+
+    function handleTap() {
+      if (!G || G.over) return;
+      if (phase === 'ready' && myTurn) { ac(); startAim(); }
+      else if (phase === 'aiming' && myTurn) { ac(); lockAim(); }
+      else if (phase === 'power' && myTurn) { ac(); lockPower(); }
+    }
+    slammerEl.addEventListener('click', handleTap);
+    arenaEl.addEventListener('click', handleTap);
+
+    function resolveImpact(power, impactX) {
+      phase = 'resolving';
+      disc.style.display = 'flex'; disc.style.left = (impactX * 100) + '%';
+      const dropAnim = disc.animate([{ top: '-4%' }, { top: '50%' }], { duration: 170, easing: 'cubic-bezier(.4,0,.85,1)', fill: 'forwards' });
+      setTimeout(() => {
+        const result = doSlam(power, impactX);
+        renderScores();
+        shockwave(result);
         showSlamFx(result);
-        setTimeout(() => {
-          if (G.pogs.length === 0) { endGame(); return; }
-          G.turn = 1; renderGame();
-        }, result.count > 0 ? 760 : 350);
-      }, 1400);
+        setTimeout(() => { dropAnim.cancel(); disc.style.display = 'none'; disc.style.top = '-4%'; }, 220);
+        const wait = result.count > 0 ? 920 : 460;
+        setTimeout(() => advanceAfterSlam(result), wait);
+      }, 180);
+    }
+
+    function shockwave(result) {
+      const w = arenaEl.offsetWidth, h = arenaEl.offsetHeight;
+      const ring = document.createElement('div');
+      ring.className = 'shockwave' + (result.perfect ? ' perfect' : '') + (result.slammer === 2 ? ' cpu' : '');
+      ring.style.left = (result.impactX * w) + 'px'; ring.style.top = (h * 0.5) + 'px';
+      arenaEl.appendChild(ring);
+      const size = Math.max(40, result.blast * 2 * w);
+      ring.animate([{ width: '12px', height: '12px', opacity: 0.95 }, { width: size + 'px', height: size + 'px', opacity: 0 }], { duration: 520, easing: 'cubic-bezier(.2,.7,.3,1)' });
+      setTimeout(() => ring.remove(), 540);
     }
 
     function showSlamFx(result) {
-      const slammerName = result.slammer === 1 ? 'You' : 'CPU';
-      sfx.slam(); shake(result.perfect ? 1.6 : (result.count > 0 ? 1 : 0.5));
-      const rect = $('stack').getBoundingClientRect();
-      const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+      const name = result.slammer === 1 ? 'You' : 'CPU';
+      sfx.slam(); shake(result.perfect ? 1.8 : (result.count > 0 ? 1.1 : 0.5));
+      const r = arenaEl.getBoundingClientRect();
+      const ix = r.left + result.impactX * r.width, iy = r.top + r.height * 0.5;
+      const rating = rateSlam(result);
+
+      // flip caught pogs in place
+      result.flipped.forEach(pd => {
+        const el = document.querySelector(`#pile .pog[data-id="${pd.id}"]`);
+        if (el) {
+          el.classList.remove('face-down'); el.classList.add('face-up');
+          if (!el.querySelector('.sym')) { const s = document.createElement('div'); s.className = 'sym'; s.textContent = pd.coin.symbol.toUpperCase(); el.appendChild(s); }
+          const base = el.style.transform;
+          el.animate([{ transform: base + ' scale(1)' }, { transform: base + ' scale(1.3)' }, { transform: base + ' scale(1)' }], { duration: 220 });
+        }
+      });
+
       if (result.count > 0) {
-        const color = result.slammer === 1 ? ['#10b981', '#34d399', '#fff'] : ['#06b6d4', '#22d3ee', '#fff'];
-        burst(cx, cy, color, result.perfect ? 40 : 20, result.perfect ? 1.5 : 1);
-        floatNumber(cx, cy - 30, '+' + result.count, result.perfect ? '#fbbf24' : (result.slammer === 1 ? '#10b981' : '#06b6d4'));
-        if (result.perfect) { sfx.perfect(); toast('💥 PERFECT SLAM!'); burst(cx, cy, ['#fbbf24', '#fde047', '#fff'], 30, 1.8); }
+        const cols = result.slammer === 1 ? ['#10b981', '#34d399', '#fff'] : ['#06b6d4', '#22d3ee', '#fff'];
+        burst(ix, iy, cols, result.perfect ? 44 : 22, result.perfect ? 1.6 : 1);
+        floatNumber(ix, iy - 26, '+' + result.count, result.perfect ? '#fbbf24' : (result.slammer === 1 ? '#10b981' : '#06b6d4'), rating.tier >= 3);
+        if (rating.tier >= 3) { sfx.perfect(); burst(ix, iy, ['#fbbf24', '#fde047', '#fff'], 34, 1.9); }
         else result.flipped.forEach((_, i) => sfx.collect(i));
-        turnBanner.textContent = `${slammerName} slammed ${result.count}!`;
-        animateCollection(result.flipped, result.slammer);
+        turnBanner.textContent = `${name}: ${rating.label}`; turnBanner.style.color = result.slammer === 1 ? 'var(--accent)' : 'var(--accent-2)';
+        if (rating.tier >= 2) toast(`${name === 'You' ? '' : 'CPU '}${rating.label}`);
+        const st = G.streak[result.slammer];
+        if (st === 3) toast(`🔥 ${name} on fire — bigger blasts!`);
+        setTimeout(() => animateCollection(result.flipped, result.slammer), 240);
       } else {
-        sfx.whiff(); turnBanner.textContent = `${slammerName} whiffed! 0 flipped.`; floatNumber(cx, cy - 30, 'MISS', '#8b8ba7');
+        sfx.whiff(); turnBanner.textContent = `${name}: ${rating.label}`; turnBanner.style.color = 'var(--muted)';
+        floatNumber(ix, iy - 26, 'MISS', '#8b8ba7');
       }
+      renderFire();
+    }
+
+    function advanceAfterSlam(result) {
+      if (G.pogs.length === 0) { endGame(); return; }
+      G.turn = G.turn === 1 ? 2 : 1;
+      renderBoard();
+      if (G.turn === 1) beginPlayerTurn(); else beginCpuTurn();
     }
 
     /* ===================== RENDER ===================== */
-    function renderGame() {
+    function renderScores() {
       $('p1-score').textContent = G.p1Score; $('p2-score').textContent = G.p2Score;
-      $('p1-card').classList.toggle('active-turn', G.turn === 1);
-      $('p2-card').classList.toggle('active-turn', G.turn === 2);
-      myTurn = (G.turn === 1) && !G.over;
-      if (myTurn) { turnBanner.textContent = '🎯 Your turn — SLAM!'; turnBanner.style.color = 'var(--accent)'; setSlamMode('ready'); }
-      renderStack(G.pogs);
-      renderRow($('p1-collected'), G.p1Collected); renderRow($('p2-collected'), G.p2Collected);
-      renderRow($('p1-contributed'), G.original.filter(p => p.owner === 1));
-      renderRow($('p2-contributed'), G.original.filter(p => p.owner === 2));
+      $('p1-card').classList.toggle('active-turn', G.turn === 1 && !G.over);
+      $('p2-card').classList.toggle('active-turn', G.turn === 2 && !G.over);
     }
-    function renderStack(pogs) {
-      const stackEl = $('stack'); stackEl.innerHTML = ''; let offset = 6;
-      for (let i = 0; i < pogs.length; i++) {
-        const pog = pogs[i]; const el = document.createElement('div');
+    function renderFire() {
+      $('p1-card').classList.toggle('on-fire', G.streak[1] >= 3);
+      $('p2-card').classList.toggle('on-fire', G.streak[2] >= 3);
+    }
+    function renderBoard() { renderScores(); renderFire(); renderPile(); renderRows(); }
+    function renderPile() {
+      const pile = $('pile'); pile.innerHTML = '';
+      G.pogs.forEach((pog, i) => {
+        const el = document.createElement('div');
         el.className = 'pog ' + (pog.faceUp ? 'face-up' : 'face-down') + ' r-' + (pog.coin.rarity || 'common');
         el.dataset.id = pog.id;
         const img = document.createElement('img'); img.src = pog.coin.image; img.alt = pog.coin.name; img.onerror = () => { img.style.visibility = 'hidden'; };
         el.appendChild(img);
-        if (pog.faceUp) { const sym = document.createElement('div'); sym.className = 'sym'; sym.textContent = pog.coin.symbol.toUpperCase(); el.appendChild(sym); }
-        const rot = (pog.id * 137) % 24 - 12; el.style.bottom = offset + 'px'; el.style.transform = `rotateZ(${rot}deg)`; el.style.zIndex = i; offset += 7;
-        stackEl.appendChild(el);
-      }
+        if (pog.faceUp) { const s = document.createElement('div'); s.className = 'sym'; s.textContent = pog.coin.symbol.toUpperCase(); el.appendChild(s); }
+        const rot = (pog.id * 137) % 30 - 15;
+        el.style.left = (pog.nx * 100) + '%'; el.style.top = (pog.ny * 100) + '%';
+        el.style.transform = `translate(-50%,-50%) rotate(${rot}deg)`;
+        el.style.zIndex = Math.round(pog.ny * 100);
+        pile.appendChild(el);
+      });
     }
-    function renderRow(container, list) { container.innerHTML = (list || []).map(r => `<img title="${r.coin.name}" src="${r.coin.image}" onerror="this.style.visibility='hidden'">`).join(''); }
+    function renderRows() {
+      renderRow($('p1-collected'), G.p1Collected); renderRow($('p2-collected'), G.p2Collected);
+      renderRow($('p1-contributed'), G.original.filter(p => p.owner === 1));
+      renderRow($('p2-contributed'), G.original.filter(p => p.owner === 2));
+    }
+    function renderRow(c, list) { c.innerHTML = (list || []).map(r => `<img title="${r.coin.name}" src="${r.coin.image}" onerror="this.style.visibility='hidden'">`).join(''); }
 
     function animateCollection(flipped, collectorNum) {
-      isAnimating = true;
       const target = collectorNum === 1 ? $('p1-collected') : $('p2-collected');
       const tr = target.getBoundingClientRect(); const tx = tr.left + tr.width / 2, ty = tr.top + tr.height / 2;
-      let done = 0; const total = flipped.length;
-      const finish = () => { isAnimating = false; };
-      if (total === 0) return finish();
       flipped.forEach((pd, idx) => {
-        const src = document.querySelector(`.pog[data-id="${pd.id}"]`);
-        if (!src) { if (++done === total) finish(); return; }
-        const rect = src.getBoundingClientRect(); const fly = src.cloneNode(true);
-        fly.style.position = 'fixed'; fly.style.zIndex = 4200; fly.style.margin = 0; fly.style.top = rect.top + 'px'; fly.style.left = rect.left + 'px'; fly.style.transition = 'all .7s cubic-bezier(.3,.9,.3,1)';
+        const src = document.querySelector(`#pile .pog[data-id="${pd.id}"]`);
+        if (!src) return;
+        const rect = src.getBoundingClientRect();
+        const fly = src.cloneNode(true);
+        fly.style.position = 'fixed'; fly.style.zIndex = 4200; fly.style.margin = 0; fly.style.left = rect.left + 'px'; fly.style.top = rect.top + 'px'; fly.style.transform = 'rotate(0deg)'; fly.style.transition = 'all .7s cubic-bezier(.3,.9,.3,1)';
         document.body.appendChild(fly); src.style.opacity = '0';
-        requestAnimationFrame(() => { fly.style.top = (ty - 15) + 'px'; fly.style.left = (tx - 15) + 'px'; fly.style.transform = 'scale(0.28) rotate(540deg)'; fly.style.opacity = '0.2'; });
-        setTimeout(() => { fly.remove(); if (++done === total) finish(); }, 720 + idx * 30);
+        requestAnimationFrame(() => { fly.style.top = (ty - 15) + 'px'; fly.style.left = (tx - 15) + 'px'; fly.style.transform = 'scale(0.45) rotate(540deg)'; fly.style.opacity = '0.2'; });
+        setTimeout(() => fly.remove(), 720 + idx * 30);
       });
     }
 
@@ -524,10 +653,7 @@
     function endGame() {
       G.over = true;
       const winner = G.p1Score > G.p2Score ? 1 : (G.p2Score > G.p1Score ? 2 : 0);
-      const rec = getRecord();
-      if (winner === 1) rec.wins++; else if (winner === 2) rec.losses++;
-      saveRecord(rec); renderRecord();
-
+      const rec = getRecord(); if (winner === 1) rec.wins++; else if (winner === 2) rec.losses++; saveRecord(rec); renderRecord();
       const title = $('go-title');
       if (winner === 0) { title.textContent = "It's a Tie!"; title.className = 'tie'; }
       else if (winner === 1) { title.textContent = '🏆 You Win!'; title.className = 'win'; }
@@ -536,23 +662,23 @@
       const imgs = arr => arr.map(r => `<img src="${r.coin.image}" title="${r.coin.name}" onerror="this.style.visibility='hidden'">`).join('') || '<span style="color:#8b8ba7;font-size:.75rem">none</span>';
       $('go-gained').innerHTML = imgs(G.p1Collected); $('go-lost').innerHTML = imgs(G.p2Collected);
       $('gameover-modal').classList.add('show');
-      setSlamMode('waiting'); turnBanner.textContent = 'Game over';
+      setBtn('waiting'); turnBanner.textContent = 'Game over'; renderScores();
       if (winner === 1) { sfx.win(); confettiRain(); } else if (winner === 2) sfx.lose();
     }
 
     /* ===================== ENTRY ===================== */
     function startMatch() {
       ac(); newGame();
-      $('start-overlay').style.display = 'none';
-      $('container').classList.add('active');
-      $('gameover-modal').classList.remove('show');
-      renderGame();
-      toast('Match started — good luck!');
+      $('start-overlay').style.display = 'none'; $('container').classList.add('active'); $('gameover-modal').classList.remove('show');
+      disc.style.display = 'none'; aimLine.style.display = 'none';
+      renderBoard(); beginPlayerTurn();
+      toast('Match started — aim for the thickest cluster!');
     }
+    function toMenu() { $('gameover-modal').classList.remove('show'); $('container').classList.remove('active'); $('start-overlay').style.display = 'flex'; renderRecord(); G = null; phase = 'idle'; }
     $('play-btn').addEventListener('click', startMatch);
     $('go-rematch').addEventListener('click', startMatch);
-    $('go-menu').addEventListener('click', () => { $('gameover-modal').classList.remove('show'); $('container').classList.remove('active'); $('start-overlay').style.display = 'flex'; renderRecord(); });
-    $('leave-btn').addEventListener('click', () => { $('container').classList.remove('active'); $('start-overlay').style.display = 'flex'; renderRecord(); });
+    $('go-menu').addEventListener('click', toMenu);
+    $('leave-btn').addEventListener('click', toMenu);
   </script>
 </body>
 
