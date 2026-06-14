@@ -41,7 +41,7 @@ All game state is synchronized via Socket.IO events:
 **Client → Server:**
 - `register`, `login` - Authentication
 - `joinRoom`, `startPvC` - Room/match setup
-- `slam` - Player action: `{ roomId, power, impactX }` (aim + power)
+- `slam` - Player action: `{ roomId, power, impactY }` (aim height + power)
 - `restartGame`, `refill` - Game management
 
 **Server → Client:**
@@ -56,7 +56,7 @@ Rooms are stored in-memory in a `rooms` object:
 rooms[roomId] = {
   players: [...],      // Max 2 players with socket/user info
   gameState: 'waiting' | 'playing' | 'ended',
-  pogs: [...],         // Pile of 12; each pog has { id, owner, coin, faceUp, nx, ny }
+  pogs: [...],         // Vertical stack of 12; each { id, owner, coin, faceUp, nx, ny, rot, special }
   p1Collected: [...],  // Pogs won by player 1
   p2Collected: [...],  // Pogs won by player 2
   turnIndex: 0|1,      // Whose turn
@@ -66,18 +66,22 @@ rooms[roomId] = {
 ```
 
 ### Game Flow (aim + power slam)
-1. Each player contributes 6 pogs; combined 12 are scattered into a "pile" — every
-   pog gets a normalized `(nx, ny)` position (server-assigned in `initializeGame`).
-2. On your turn you pick **where** to slam (`impactX`, 0–1) and **how hard** (`power`,
-   0–100) — the client sends both; the server (`performSlam`) is authoritative.
-3. Power sets a blast radius + strength. Pogs within the blast flip face-up (closer
-   to impact = more likely); `power >= 90` is a PERFECT slam.
-4. Face-up pogs go to the slammer's collection and are removed from the pile.
-5. A 3+ scoring streak goes "on fire" and widens the blast.
-6. Game ends when the pile is empty; whoever collected more pogs wins.
+1. Each player contributes 6 pogs; the combined 12 form a vertical **stack** — each
+   pog gets a height `ny` (+ x jitter `nx` and tilt `rot`), server-assigned in
+   `initializeGame`. One 💣 bomb and one 🔒 locked pog are seeded per game.
+2. On your turn you pick **which height** to strike (`impactY`, 0–1) and **how hard**
+   (`power`, 0–100) — the client sends both; the server (`performSlam`) is authoritative.
+3. Power = how far the shock reaches through the stack (blast capped below half-height,
+   so a centred hit can't clear everything). Pogs near `impactY` flip; `power >= 90` = PERFECT.
+4. Special pogs: 🔒 locked only flips on a strong hit (power ≥ 70 or PERFECT); 💣 bomb
+   chain-flips pogs within 0.11 ny (and into other bombs).
+5. Scoring is **points**: legendary pogs = 2pts, others = 1; a 3+ streak ("on fire")
+   widens the blast and multiplies points ×1.5. Flipped pogs go to the slammer's collection.
+6. Game ends when the stack is empty; higher points wins.
 
-The browser-only `demo.html` reimplements this exact logic client-side (it has no
-server); keep the constants in `performSlam` and demo's `doSlam` in sync.
+The browser-only `demo.html` reimplements this client-side (no server) and adds the
+single-player gauntlet + unlockable slammers. Keep the core constants in `performSlam`
+and demo's `doSlam` in sync.
 
 ### Database Schema
 
@@ -89,11 +93,11 @@ Single `players` table:
 ## Key Implementation Details
 
 - Room state is in-memory only (lost on server restart)
-- Slam is server-authoritative: client sends `slam { roomId, power, impactX }`; the
+- Slam is server-authoritative: client sends `slam { roomId, power, impactY }`; the
   server computes which pogs flip (clamps inputs, so a tampered client can't cheat
   the outcome beyond choosing aim + power)
-- `slamResult` carries `{ impactX, blast, perfect, accuracy, flippedPogs, slammer,
-  streak }` so both clients animate the shockwave + rating identically
+- `slamResult` carries `{ impactY, blast, perfect, accuracy, points, bombTriggered,
+  onFire, flippedPogs, slammer, streak }` so both clients animate identically
 - CPU opponent auto-slams after ~1.4s, aiming near the cluster centroid with error
 - Pog images come from CoinGecko API URLs (roster + rarity tiers in `coins.js`)
 - User needs minimum 6 pogs to join a game; initial inventory is 12 random pog IDs

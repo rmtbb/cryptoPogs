@@ -28,18 +28,11 @@ function shuffleArray(array) {
 
 const clampN = (v, a, b) => Math.max(a, Math.min(b, v));
 
-// Each pog gets a normalized (nx, ny) position in the "pile". A slam picks an
-// impact point (impactX) + power; pogs within the blast radius flip, closer =
-// more likely. Aiming at the thickest cluster + a strong/PERFECT slam is the skill.
-function scatterPos() {
-    return {
-        nx: clampN(0.5 + (Math.random() - 0.5) * 0.80, 0.1, 0.9),
-        ny: clampN(0.5 + (Math.random() - 0.5) * 0.60, 0.22, 0.78)
-    };
-}
-
-function centroidX(pogs) {
-    return pogs.length ? pogs.reduce((s, p) => s + p.nx, 0) / pogs.length : 0.5;
+// Pogs form a vertical stack: each gets a height ny (0=bottom..top) plus small
+// x jitter + tilt so it looks hand-stacked. A slam picks a height (impactY) +
+// power; pogs near that height flip (power = how far the shock reaches).
+function centroidY(pogs) {
+    return pogs.length ? pogs.reduce((s, p) => s + p.ny, 0) / pogs.length : 0.5;
 }
 
 io.on('connection', (socket) => {
@@ -194,10 +187,10 @@ io.on('connection', (socket) => {
     });
 
     socket.on('slam', (payload) => {
-        // payload: { roomId, power, impactX } (string roomId tolerated for safety)
+        // payload: { roomId, power, impactY } (string roomId tolerated for safety)
         const roomId = typeof payload === 'string' ? payload : payload.roomId;
         const power = typeof payload === 'string' ? 70 : payload.power;
-        const impactX = typeof payload === 'string' ? 0.5 : payload.impactX;
+        const impactY = typeof payload === 'string' ? 0.5 : payload.impactY;
 
         const room = rooms[roomId];
         if (!room || room.gameState !== 'playing') return;
@@ -205,7 +198,7 @@ io.on('connection', (socket) => {
         const currentPlayer = room.players[room.turnIndex];
         if (socket.id !== currentPlayer.id) return;
 
-        const results = performSlam(room, power, impactX);
+        const results = performSlam(room, power, impactY);
         io.to(roomId).emit('slamResult', results);
 
         if (room.pogs.length === 0) {
@@ -292,59 +285,88 @@ function initializeGame(room) {
     const p2Contrib = p2Ids.slice(0, 6);
 
     const compiledPogs = [];
+    const order = [];
+    p1Contrib.forEach((id, i) => order.push({ id: i, owner: 1, coin: getCoin(id) }));
+    p2Contrib.forEach((id, i) => order.push({ id: i + 6, owner: 2, coin: getCoin(id) }));
+    shuffleArray(order); // mix owners through the stack
 
-    p1Contrib.forEach((id, i) => {
-        const s = scatterPos();
-        compiledPogs.push({ id: i, owner: 1, coin: getCoin(id), faceUp: false, nx: s.nx, ny: s.ny });
-    });
-    p2Contrib.forEach((id, i) => {
-        const s = scatterPos();
-        compiledPogs.push({ id: i + 6, owner: 2, coin: getCoin(id), faceUp: false, nx: s.nx, ny: s.ny });
+    order.forEach((o, i) => {
+        compiledPogs.push({
+            ...o, faceUp: false, special: null,
+            ny: clampN(0.86 - (i / 11) * 0.72 + (Math.random() - 0.5) * 0.04, 0.1, 0.9),
+            nx: clampN(0.5 + (Math.random() - 0.5) * 0.07, 0.4, 0.6),
+            rot: (Math.random() - 0.5) * 22
+        });
     });
 
-    // No shuffle: each pog's (nx, ny) defines the layout you aim into.
+    // seed 1 bomb + 1 locked pog on non-legendary pogs
+    const specialable = compiledPogs.filter(p => p.coin.rarity !== 'legendary');
+    shuffleArray(specialable);
+    if (specialable[0]) specialable[0].special = 'bomb';
+    if (specialable[1]) specialable[1].special = 'locked';
+
     room.pogs = compiledPogs;
     room.originalPogs = JSON.parse(JSON.stringify(compiledPogs));
     room.streak = { 1: 0, 2: 0 };
 }
 
-// Authoritative slam: (power 0-100, impactX 0-1) -> which pogs flip.
-// Power sets blast radius + strength; pogs within the blast flip (closer = more
-// likely). A 3+ slam streak goes "on fire" and widens the blast.
-function performSlam(room, power, impactX) {
+// Authoritative slam: strike the stack at height impactY with power. Pogs near
+// that height flip (power = how far the shock reaches; capped below half-height).
+// Legendaries = 2pts; locked pogs resist weak hits; bombs chain-flip neighbours.
+function performSlam(room, power, impactY) {
     if (!room.streak) room.streak = { 1: 0, 2: 0 };
     const p = clampN(Number(power) || 0, 0, 100);
     const perfect = p >= 90;
     const slammerNum = room.turnIndex + 1;
+    const onFire = room.streak[slammerNum] >= 3;
 
-    let blast = 0.12 + 0.26 * (p / 100);
-    if (perfect) blast += 0.10;
-    if (room.streak[slammerNum] >= 3) blast += 0.06;
+    let blast = 0.16 + 0.26 * (p / 100);
+    if (perfect) blast += 0.06;
+    if (onFire) blast += 0.04;
+    blast = Math.min(blast, 0.33);
     let baseChance = 0.42 + 0.45 * (p / 100);
     if (perfect) baseChance = 0.95;
+    const strongHit = p >= 70 || perfect;
 
-    const ix = clampN(Number(impactX), 0, 1);
-    const cx = centroidX(room.pogs);
-    const aimErr = Math.abs(ix - cx);
+    const iy = clampN(Number(impactY), 0, 1);
+    const cy = centroidY(room.pogs);
+    const aimErr = Math.abs(iy - cy);
     const accuracy = aimErr < 0.09 ? 'bullseye' : (aimErr < 0.2 ? 'close' : 'off');
 
     room.pogs.forEach(pog => {
-        const dx = pog.nx - ix;
-        const dy = (pog.ny - 0.5) * 0.55;
-        const d = Math.sqrt(dx * dx + dy * dy);
-        const chance = d <= blast ? baseChance * (1 - (d / blast) * 0.55) : 0.05;
+        const d = Math.abs(pog.ny - iy);
+        let chance = d <= blast ? baseChance * (1 - (d / blast) * 0.55) : 0.05;
+        if (pog.special === 'locked' && !strongHit) chance = 0;
         pog.faceUp = Math.random() < chance;
+        pog.chained = false;
     });
+
+    // bomb chain
+    let bombTriggered = false;
+    let queue = room.pogs.filter(p => p.faceUp && p.special === 'bomb');
+    const seen = new Set(queue);
+    while (queue.length) {
+        const bomb = queue.shift(); bombTriggered = true;
+        room.pogs.forEach(n => {
+            if (!n.faceUp && Math.abs(n.ny - bomb.ny) < 0.11) {
+                n.faceUp = true; n.chained = true;
+                if (n.special === 'bomb' && !seen.has(n)) { seen.add(n); queue.push(n); }
+            }
+        });
+    }
 
     const faceUpPogs = room.pogs.filter(p => p.faceUp);
     const count = faceUpPogs.length;
+    let points = 0;
 
     if (count > 0) {
+        const raw = faceUpPogs.reduce((s, pg) => s + (pg.coin.rarity === 'legendary' ? 2 : 1), 0);
+        points = onFire ? Math.round(raw * 1.5) : raw;
         if (slammerNum === 1) {
-            room.p1Score += count;
+            room.p1Score += points;
             faceUpPogs.forEach(p => { p.collectedBy = 1; room.p1Collected.push(p); });
         } else {
-            room.p2Score += count;
+            room.p2Score += points;
             faceUpPogs.forEach(p => { p.collectedBy = 2; room.p2Collected.push(p); });
         }
         room.streak[slammerNum]++;
@@ -356,13 +378,16 @@ function performSlam(room, power, impactX) {
 
     return {
         flippedCount: count,
+        points,
         flippedPogs: faceUpPogs,
         slammer: slammerNum,
         power: Math.round(p),
-        impactX: ix,
+        impactY: iy,
         blast,
         perfect: perfect && count > 0,
         accuracy,
+        bombTriggered,
+        onFire,
         streak: room.streak[slammerNum],
         remaining: room.pogs.length
     };
@@ -402,14 +427,16 @@ function checkCpuTurn(room) {
         setTimeout(() => {
             if (room.gameState !== 'playing') return;
 
-            // CPU "skill": aim near the cluster centroid (with some error),
+            // CPU "skill": aim near the cluster (with error), sometimes hunt a gold;
             // usually a solid slam, occasionally a perfect one.
-            const cx = centroidX(room.pogs);
-            const impactX = clampN(cx + (Math.random() - 0.5) * 0.22, 0.1, 0.9);
+            let target = centroidY(room.pogs);
+            const golds = room.pogs.filter(p => p.coin.rarity === 'legendary');
+            if (golds.length && Math.random() < 0.45) target = golds[Math.floor(Math.random() * golds.length)].ny;
+            const impactY = clampN(target + (Math.random() - 0.5) * 0.22, 0.1, 0.9);
             const roll = Math.random();
             const cpuPower = roll < 0.15 ? (90 + Math.random() * 10) : (50 + Math.random() * 38);
 
-            const results = performSlam(room, cpuPower, impactX);
+            const results = performSlam(room, cpuPower, impactY);
             io.to(room.id).emit('slamResult', results);
 
             if (room.pogs.length === 0) {

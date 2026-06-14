@@ -199,48 +199,48 @@
 
     #game-col { display: flex; flex-direction: column; align-items: center; gap: 10px; }
 
-    /* ---------- Arena (the pile you aim into) ---------- */
-    #arena {
-      position: relative; width: 100%; max-width: 360px; height: 260px; margin: 14px auto 0;
-      border-radius: 18px; overflow: visible;
-      background:
-        radial-gradient(ellipse at 50% 88%, rgba(124,58,237,0.16), transparent 70%),
-        radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.025), transparent 72%);
-      border: 1px solid var(--panel-bd);
-    }
-    #arena::after { content:''; position:absolute; left:50%; bottom:14px; transform:translateX(-50%); width:75%; height:24px; border-radius:50%; background:radial-gradient(ellipse, rgba(0,0,0,0.5), transparent 70%); }
-    #pile { position:absolute; inset:0; }
+    /* ---------- Arena: a real (imperfect) vertical stack ---------- */
+    #arena { position: relative; width: 100%; max-width: 320px; height: 340px; margin: 6px auto 0; perspective: 850px; }
+    #arena::after { content:''; position:absolute; left:50%; bottom:8px; transform:translateX(-50%); width:62%; height:26px; border-radius:50%; background:radial-gradient(ellipse, rgba(0,0,0,0.55), transparent 70%); }
+    #pile { position:absolute; inset:0; transform-style:preserve-3d; }
 
     .pog {
-      position: absolute; width: 58px; height: 58px; border-radius: 50%;
+      position: absolute; width: 64px; height: 64px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      background: radial-gradient(circle at 35% 30%, #2a2748, #15122b 75%);
-      border: 3px solid rgba(255,255,255,0.15); box-shadow: 0 5px 12px rgba(0,0,0,0.5);
-      transition: opacity .2s ease;
+      background: radial-gradient(circle at 36% 28%, #322c58, #14112a 76%);
+      border: 3px solid rgba(255,255,255,0.16); box-shadow: 0 5px 13px rgba(0,0,0,0.55), inset 0 -4px 8px rgba(0,0,0,0.35);
+      transition: opacity .18s ease;
     }
-    .pog img { width: 34px; height: 34px; border-radius: 50%; pointer-events:none; }
-    .pog .sym { position: absolute; bottom: -2px; font-size: 0.5rem; font-weight: 800; color:#fff; background: rgba(0,0,0,0.6); padding: 0 5px; border-radius: 999px; }
-    .pog.face-down img { filter: grayscale(0.4) brightness(0.65); }
+    .pog img { width: 38px; height: 38px; border-radius: 50%; pointer-events:none; }
+    .pog .sym { position: absolute; bottom: -3px; font-size: 0.5rem; font-weight: 800; color:#fff; background: rgba(0,0,0,0.65); padding: 0 5px; border-radius: 999px; }
+    .pog.face-down img { filter: grayscale(0.45) brightness(0.6); }
     .pog.face-down .sym { display: none; }
+    .pog .badge { position:absolute; top:-4px; right:-4px; font-size:0.5rem; font-weight:900; background:var(--gold); color:#3a2a00; border-radius:999px; padding:0 4px; box-shadow:0 0 8px rgba(251,191,36,0.8); }
+    .pog .sbadge { position:absolute; top:-6px; left:-6px; font-size:0.85rem; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.6)); z-index:2; }
 
     /* rarity rings */
-    .pog.r-common  { border-color: rgba(148,163,184,0.6); }
-    .pog.r-rare    { border-color: #38bdf8; box-shadow: 0 5px 12px rgba(0,0,0,0.5), 0 0 12px rgba(56,189,248,0.5); }
-    .pog.r-epic    { border-color: #c084fc; box-shadow: 0 5px 12px rgba(0,0,0,0.5), 0 0 15px rgba(192,132,252,0.65); }
-    .pog.r-legendary { border-color: var(--gold); box-shadow: 0 5px 12px rgba(0,0,0,0.5), 0 0 18px rgba(251,191,36,0.8); }
+    .pog.r-common  { border-color: rgba(148,163,184,0.65); }
+    .pog.r-rare    { border-color: #38bdf8; box-shadow: 0 5px 13px rgba(0,0,0,0.55), 0 0 12px rgba(56,189,248,0.5); }
+    .pog.r-epic    { border-color: #c084fc; box-shadow: 0 5px 13px rgba(0,0,0,0.55), 0 0 15px rgba(192,132,252,0.65); }
+    .pog.r-legendary { border-color: var(--gold); box-shadow: 0 5px 13px rgba(0,0,0,0.55), 0 0 18px rgba(251,191,36,0.85); }
     .pog.face-up.r-legendary { animation: legend 1.5s infinite; }
-    @keyframes legend { 0%,100%{ filter: brightness(1);} 50%{ filter: brightness(1.25);} }
+    @keyframes legend { 0%,100%{ filter: brightness(1);} 50%{ filter: brightness(1.3);} }
+    /* special pogs override the rarity ring so they're spottable even when overlapped */
+    .pog.sp-bomb { border-color:#f87171 !important; box-shadow:0 5px 13px rgba(0,0,0,.55), 0 0 16px rgba(239,68,68,0.75) !important; animation: bombpulse 1s infinite; }
+    @keyframes bombpulse { 0%,100%{ box-shadow:0 5px 13px rgba(0,0,0,.55), 0 0 12px rgba(239,68,68,0.6);} 50%{ box-shadow:0 5px 13px rgba(0,0,0,.55), 0 0 24px rgba(239,68,68,0.95);} }
+    .pog.sp-locked { border-color:#cbd5e1 !important; border-style:dashed !important; box-shadow:0 5px 13px rgba(0,0,0,.55), 0 0 10px rgba(203,213,225,0.45) !important; }
 
-    #aim-line { position:absolute; top:-6px; bottom:18px; width:3px; transform:translateX(-50%); display:none; z-index:40;
-      background: linear-gradient(var(--accent), rgba(16,185,129,0.1)); box-shadow: 0 0 12px var(--accent); }
-    #aim-line::before { content:''; position:absolute; left:50%; bottom:0; transform:translateX(-50%); width:14px; height:14px; border:2px solid var(--accent); border-radius:50%; box-shadow:0 0 10px var(--accent); }
+    /* horizontal aim line sweeps UP/DOWN the stack; slammer strikes in from the right */
+    #aim-line { position:absolute; left:2%; right:14%; height:3px; transform:translateY(-50%); display:none; z-index:60;
+      background: linear-gradient(90deg, transparent, var(--accent) 30%, var(--accent)); box-shadow: 0 0 12px var(--accent); }
+    #aim-line::after { content:''; position:absolute; right:-2px; top:50%; transform:translateY(-50%); width:0;height:0; border-top:7px solid transparent; border-bottom:7px solid transparent; border-right:10px solid var(--accent); }
     #slammer-disc {
-      position:absolute; top:-4%; width:64px; height:64px; transform:translate(-50%,-50%); border-radius:50%;
-      display:none; align-items:center; justify-content:center; z-index:50; pointer-events:none;
-      background: radial-gradient(circle at 35% 28%, #4a3c86, #1a1438 78%); border:3px solid var(--accent);
-      box-shadow: 0 0 24px rgba(16,185,129,0.75), inset 0 -6px 14px rgba(0,0,0,0.55); font-size:1.5rem; color:#fff;
+      position:absolute; right:-2%; width:54px; height:54px; transform:translate(50%,-50%); border-radius:50%;
+      display:none; align-items:center; justify-content:center; z-index:70; pointer-events:none;
+      background: radial-gradient(circle at 35% 28%, #5a4aa0, #1a1438 78%); border:3px solid var(--accent);
+      box-shadow: 0 0 22px rgba(16,185,129,0.8), inset 0 -5px 12px rgba(0,0,0,0.55); font-size:1.3rem; color:#fff;
     }
-    .shockwave { position:absolute; transform:translate(-50%,-50%); border-radius:50%; border:3px solid var(--accent); pointer-events:none; z-index:45; box-shadow:0 0 22px rgba(16,185,129,0.6); }
+    .shockwave { position:absolute; transform:translate(-50%,-50%); border-radius:50%; border:3px solid var(--accent); pointer-events:none; z-index:55; box-shadow:0 0 22px rgba(16,185,129,0.6); }
     .shockwave.perfect { border-color: var(--gold); box-shadow:0 0 28px rgba(251,191,36,0.85); }
     .shockwave.cpu { border-color: var(--accent-2); box-shadow:0 0 22px rgba(6,182,212,0.6); }
 
@@ -742,23 +742,23 @@
       const w = arenaEl.offsetWidth, h = arenaEl.offsetHeight;
       const ring = document.createElement('div');
       ring.className = 'shockwave' + (result.perfect ? ' perfect' : '') + (result.slammer === 2 ? ' cpu' : '');
-      ring.style.left = (result.impactX * w) + 'px'; ring.style.top = (h * 0.5) + 'px';
+      ring.style.left = '50%'; ring.style.top = (result.impactY * h) + 'px';
       arenaEl.appendChild(ring);
-      const size = Math.max(40, result.blast * 2 * w);
+      const size = Math.max(40, result.blast * 2.4 * h);
       ring.animate([{ width: '12px', height: '12px', opacity: 0.95 }, { width: size + 'px', height: size + 'px', opacity: 0 }], { duration: 520, easing: 'cubic-bezier(.2,.7,.3,1)' });
       setTimeout(() => ring.remove(), 540);
     }
 
     function showSlamFx(result) {
       const name = result.slammer === 1 ? p1NameEl.textContent : p2NameEl.textContent;
-      // drop the slammer disc onto the impact point (both players see where it landed)
-      disc.style.display = 'flex'; disc.style.left = (result.impactX * 100) + '%'; disc.style.top = '-4%';
-      const drop = disc.animate([{ top: '-4%' }, { top: '50%' }], { duration: 170, easing: 'cubic-bezier(.4,0,.85,1)', fill: 'forwards' });
+      // slammer strikes in from the right at the chosen height (both players see it)
+      disc.style.display = 'flex'; disc.style.top = (result.impactY * 100) + '%';
+      const strike = disc.animate([{ right: '-2%' }, { right: '42%' }], { duration: 150, easing: 'cubic-bezier(.4,0,.9,1)', fill: 'forwards' });
       setTimeout(() => {
         sfx.slam(); shake(result.perfect ? 1.8 : (result.flippedCount > 0 ? 1.1 : 0.5));
         shockwave(result);
         const r = arenaEl.getBoundingClientRect();
-        const ix = r.left + result.impactX * r.width, iy = r.top + r.height * 0.5;
+        const ix = r.left + r.width * 0.5, iy = r.top + result.impactY * r.height;
         const rating = rateSlam(result);
 
         result.flippedPogs.forEach(pd => {
@@ -774,20 +774,21 @@
         if (result.flippedCount > 0) {
           const cols = result.slammer === 1 ? ['#10b981', '#34d399', '#fff'] : ['#06b6d4', '#22d3ee', '#fff'];
           burst(ix, iy, cols, result.perfect ? 44 : 22, result.perfect ? 1.6 : 1);
-          floatNumber(ix, iy - 26, '+' + result.flippedCount, result.perfect ? '#fbbf24' : (result.slammer === 1 ? '#10b981' : '#06b6d4'));
+          floatNumber(ix, iy - 26, '+' + (result.points != null ? result.points : result.flippedCount) + (result.onFire ? ' 🔥' : ''), result.perfect ? '#fbbf24' : (result.slammer === 1 ? '#10b981' : '#06b6d4'), rating.tier >= 3);
+          if (result.bombTriggered) { toast('💣 BOMB CHAIN!'); burst(ix, iy, ['#ef4444', '#f59e0b', '#fff'], 38, 1.8); shake(1.6); }
           if (rating.tier >= 3) { sfx.perfect(); burst(ix, iy, ['#fbbf24', '#fde047', '#fff'], 34, 1.9); }
           else result.flippedPogs.forEach((_, i) => sfx.collect(i));
           turnBanner.textContent = `${name}: ${rating.label}`; turnBanner.style.color = result.slammer === 1 ? 'var(--accent)' : 'var(--accent-2)';
           if (rating.tier >= 2) toast(rating.label);
-          if (result.streak === 3) toast(`🔥 ${name} on fire — bigger blasts!`);
-          setTimeout(() => { disc.style.display = 'none'; drop.cancel(); }, 200);
+          if (result.streak === 3) toast(`🔥 ${name} on fire — 1.5× points!`);
+          setTimeout(() => { disc.style.display = 'none'; disc.style.right = '-2%'; strike.cancel(); }, 220);
           setTimeout(() => animateCollection(result.flippedPogs, result.slammer), 240);
         } else {
           sfx.whiff(); turnBanner.textContent = `${name}: Whiff! 0 flipped`; turnBanner.style.color = 'var(--muted)';
           floatNumber(ix, iy - 26, 'MISS', '#8b8ba7');
-          setTimeout(() => { disc.style.display = 'none'; drop.cancel(); finishAnim(); }, 380);
+          setTimeout(() => { disc.style.display = 'none'; disc.style.right = '-2%'; strike.cancel(); finishAnim(); }, 380);
         }
-      }, 180);
+      }, 160);
     }
 
     function finishAnim() {
@@ -807,7 +808,7 @@
     function setBtn(mode) {
       slammerEl.className = '';
       if (mode === 'ready') { slammerEl.textContent = '🎯 AIM'; slammerEl.disabled = false; powerHint.textContent = 'Tap to start aiming'; }
-      else if (mode === 'aiming') { slammerEl.classList.add('aim'); slammerEl.textContent = 'LOCK AIM'; slammerEl.disabled = false; powerHint.textContent = 'Tap to drop your slammer on the pile'; }
+      else if (mode === 'aiming') { slammerEl.classList.add('aim'); slammerEl.textContent = 'LOCK HEIGHT'; slammerEl.disabled = false; powerHint.textContent = 'Tap to choose where to strike the stack'; }
       else if (mode === 'power') { slammerEl.classList.add('power'); slammerEl.textContent = 'LOCK POWER'; slammerEl.disabled = false; powerHint.innerHTML = 'Stop the meter in the gold <b>PERFECT</b> zone!'; }
       else if (mode === 'resolving') { slammerEl.textContent = '💥'; slammerEl.disabled = true; powerHint.textContent = ''; }
       else if (mode === 'waiting') { slammerEl.classList.add('waiting'); slammerEl.textContent = "Opponent's turn…"; slammerEl.disabled = true; powerHint.textContent = ''; stopInputs(); }
@@ -821,12 +822,12 @@
 
     function startAim() {
       phase = 'aiming'; setBtn('aiming'); sfx.charge();
-      aimVal = 0.1; aimDir = 1;
-      aimLine.style.display = 'block'; disc.style.display = 'flex'; disc.style.top = '-4%';
+      aimVal = 0.12; aimDir = 1;
+      aimLine.style.display = 'block'; disc.style.display = 'flex';
       const step = () => {
-        aimVal += aimDir * 0.0115;
-        if (aimVal >= 0.9) { aimVal = 0.9; aimDir = -1; } if (aimVal <= 0.1) { aimVal = 0.1; aimDir = 1; }
-        const pct = (aimVal * 100) + '%'; aimLine.style.left = pct; disc.style.left = pct;
+        aimVal += aimDir * 0.012;
+        if (aimVal >= 0.88) { aimVal = 0.88; aimDir = -1; } if (aimVal <= 0.12) { aimVal = 0.12; aimDir = 1; }
+        const pct = (aimVal * 100) + '%'; aimLine.style.top = pct; disc.style.top = pct;
         aimRAF = requestAnimationFrame(step);
       };
       aimRAF = requestAnimationFrame(step);
@@ -841,10 +842,10 @@
     function lockPower() {
       if (powerRAF) cancelAnimationFrame(powerRAF); powerRAF = null; powerWrap.classList.remove('live');
       aimLine.style.display = 'none';
-      const power = Math.round(powerValue), impactX = aimVal;
+      const power = Math.round(powerValue), impactY = aimVal;
       phase = 'resolving'; myTurn = false; setBtn('resolving');
       // server is authoritative; it replies with slamResult (drives all the FX for both players)
-      socket.emit('slam', { roomId: currentRoomId, power, impactX });
+      socket.emit('slam', { roomId: currentRoomId, power, impactY });
     }
 
     function handleTap() {
@@ -903,9 +904,10 @@
 
     function renderPile(pogs) {
       pileEl.innerHTML = '';
-      (pogs || []).forEach(pog => {
+      // draw bottom-up so higher pogs overlap in front
+      [...(pogs || [])].sort((a, b) => (b.ny || 0.5) - (a.ny || 0.5)).forEach(pog => {
         const el = document.createElement('div');
-        el.className = 'pog ' + (pog.faceUp ? 'face-up' : 'face-down') + ' r-' + (pog.coin.rarity || 'common');
+        el.className = 'pog ' + (pog.faceUp ? 'face-up' : 'face-down') + ' r-' + (pog.coin.rarity || 'common') + (pog.special ? ' sp-' + pog.special : '');
         el.dataset.id = pog.id;
         const img = document.createElement('img');
         img.src = pog.coin.image; img.alt = pog.coin.name;
@@ -916,11 +918,13 @@
           sym.className = 'sym'; sym.textContent = pog.coin.symbol.toUpperCase();
           el.appendChild(sym);
         }
-        const rot = (pog.id * 137) % 30 - 15;
+        if (pog.coin.rarity === 'legendary') { const b = document.createElement('div'); b.className = 'badge'; b.textContent = '2×'; el.appendChild(b); }
+        if (pog.special) { const sb = document.createElement('div'); sb.className = 'sbadge'; sb.textContent = pog.special === 'bomb' ? '💣' : '🔒'; el.appendChild(sb); }
         const nx = (pog.nx != null ? pog.nx : 0.5), ny = (pog.ny != null ? pog.ny : 0.5);
+        const rot = (pog.rot != null ? pog.rot : (pog.id * 137) % 30 - 15);
         el.style.left = (nx * 100) + '%'; el.style.top = (ny * 100) + '%';
         el.style.transform = `translate(-50%,-50%) rotate(${rot}deg)`;
-        el.style.zIndex = Math.round(ny * 100);
+        el.style.zIndex = Math.round((1 - ny) * 100);
         pileEl.appendChild(el);
       });
     }

@@ -35,10 +35,12 @@ The full game (`server.js`) adds account-based play and live head-to-head matche
 
 ## 🎮 How to play
 
-1. **Ante up** — you and your opponent each toss 6 pogs into a shared pile of 12.
-2. **Aim** — a line sweeps the pile; tap to drop your slammer *where the pogs are thickest*.
-3. **Power** — stop the meter in the gold **PERFECT** zone. Power sets your blast radius + strength.
-4. **Keep the spoils** — pogs caught in the blast flip face-up and you keep 'em. Chain good slams to go 🔥 **on fire** (bigger blasts). Empty the pile with the higher score to win the loot.
+1. **Ante up** — you and your opponent each toss 6 pogs into a shared vertical **stack** of 12.
+2. **Aim** — a line sweeps up & down the stack; tap to choose *which height* to strike.
+3. **Power** — stop the meter in the gold **PERFECT** zone. Power = how far the shock reaches through the stack.
+4. **Keep the spoils** — pogs caught in the blast flip face-up and you keep 'em. Hunt the gold **2× pogs**, pop 💣 **bombs** (chain-flip neighbours), and bring power to crack 🔒 **locked** pogs. Chain good slams to go 🔥 **on fire** (×1.5 points). Higher score wins.
+
+**Single-player demo** also has a **gauntlet** (Rookie → Legend) and **unlockable slammers** with trade-offs.
 
 | In-game | Victory |
 |---|---|
