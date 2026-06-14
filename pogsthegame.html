@@ -165,13 +165,16 @@
     .pscore {
       background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
       border: 1px solid var(--panel-bd); border-radius: 14px; padding: 12px 14px; text-align: center;
-      transition: all .25s ease;
+      transition: all .25s ease; position: relative;
     }
     .pscore.active-turn { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 24px rgba(16,185,129,0.3); transform: translateY(-2px); }
     .pscore .pname { font-weight: 800; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .pscore.p1 .pname { color: var(--accent); }
     .pscore.p2 .pname { color: var(--accent-2); }
     .pscore .pnum { font-size: 2.2rem; line-height: 1; margin-top: 4px; }
+    .pscore .fire { position:absolute; top:6px; right:10px; font-size:0.9rem; opacity:0; transition:opacity .2s; }
+    .pscore.on-fire .fire { opacity:1; animation: firewob .6s infinite; }
+    @keyframes firewob { 0%,100%{transform:scale(1) rotate(-6deg)} 50%{transform:scale(1.2) rotate(6deg)} }
     .vs { font-family:'Russo One'; color: var(--muted); font-size: 1.1rem; }
 
     #turn-banner {
@@ -196,38 +199,50 @@
 
     #game-col { display: flex; flex-direction: column; align-items: center; gap: 10px; }
 
-    #stack-area {
-      position: relative; width: 100%; height: 300px;
-      display: flex; align-items: flex-end; justify-content: center;
-      perspective: 900px;
+    /* ---------- Arena (the pile you aim into) ---------- */
+    #arena {
+      position: relative; width: 100%; max-width: 360px; height: 260px; margin: 14px auto 0;
+      border-radius: 18px; overflow: visible;
+      background:
+        radial-gradient(ellipse at 50% 88%, rgba(124,58,237,0.16), transparent 70%),
+        radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.025), transparent 72%);
+      border: 1px solid var(--panel-bd);
     }
-    #stack-shadow {
-      position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
-      width: 120px; height: 26px; border-radius: 50%;
-      background: radial-gradient(ellipse, rgba(0,0,0,0.55), transparent 70%);
-    }
-    #stack { position: relative; width: 116px; height: 100%; margin: 0 auto; transition: transform .12s ease; }
+    #arena::after { content:''; position:absolute; left:50%; bottom:14px; transform:translateX(-50%); width:75%; height:24px; border-radius:50%; background:radial-gradient(ellipse, rgba(0,0,0,0.5), transparent 70%); }
+    #pile { position:absolute; inset:0; }
 
     .pog {
-      width: 110px; height: 110px; border-radius: 50%; position: absolute; left: 3px;
+      position: absolute; width: 58px; height: 58px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
       background: radial-gradient(circle at 35% 30%, #2a2748, #15122b 75%);
-      border: 3px solid rgba(255,255,255,0.15);
-      box-shadow: 0 6px 14px rgba(0,0,0,0.5);
-      transition: transform .15s ease, box-shadow .2s ease, opacity .2s ease;
+      border: 3px solid rgba(255,255,255,0.15); box-shadow: 0 5px 12px rgba(0,0,0,0.5);
+      transition: opacity .2s ease;
     }
-    .pog img { width: 64px; height: 64px; border-radius: 50%; }
-    .pog .sym { position: absolute; bottom: 6px; font-size: 0.6rem; font-weight: 800; color:#fff; background: rgba(0,0,0,0.55); padding: 1px 7px; border-radius: 999px; }
-    .pog.face-down img { filter: grayscale(0.4) brightness(0.7); }
+    .pog img { width: 34px; height: 34px; border-radius: 50%; pointer-events:none; }
+    .pog .sym { position: absolute; bottom: -2px; font-size: 0.5rem; font-weight: 800; color:#fff; background: rgba(0,0,0,0.6); padding: 0 5px; border-radius: 999px; }
+    .pog.face-down img { filter: grayscale(0.4) brightness(0.65); }
     .pog.face-down .sym { display: none; }
 
     /* rarity rings */
     .pog.r-common  { border-color: rgba(148,163,184,0.6); }
-    .pog.r-rare    { border-color: #38bdf8; box-shadow: 0 6px 14px rgba(0,0,0,0.5), 0 0 14px rgba(56,189,248,0.5); }
-    .pog.r-epic    { border-color: #c084fc; box-shadow: 0 6px 14px rgba(0,0,0,0.5), 0 0 18px rgba(192,132,252,0.65); }
-    .pog.r-legendary { border-color: var(--gold); box-shadow: 0 6px 14px rgba(0,0,0,0.5), 0 0 22px rgba(251,191,36,0.8); }
+    .pog.r-rare    { border-color: #38bdf8; box-shadow: 0 5px 12px rgba(0,0,0,0.5), 0 0 12px rgba(56,189,248,0.5); }
+    .pog.r-epic    { border-color: #c084fc; box-shadow: 0 5px 12px rgba(0,0,0,0.5), 0 0 15px rgba(192,132,252,0.65); }
+    .pog.r-legendary { border-color: var(--gold); box-shadow: 0 5px 12px rgba(0,0,0,0.5), 0 0 18px rgba(251,191,36,0.8); }
     .pog.face-up.r-legendary { animation: legend 1.5s infinite; }
     @keyframes legend { 0%,100%{ filter: brightness(1);} 50%{ filter: brightness(1.25);} }
+
+    #aim-line { position:absolute; top:-6px; bottom:18px; width:3px; transform:translateX(-50%); display:none; z-index:40;
+      background: linear-gradient(var(--accent), rgba(16,185,129,0.1)); box-shadow: 0 0 12px var(--accent); }
+    #aim-line::before { content:''; position:absolute; left:50%; bottom:0; transform:translateX(-50%); width:14px; height:14px; border:2px solid var(--accent); border-radius:50%; box-shadow:0 0 10px var(--accent); }
+    #slammer-disc {
+      position:absolute; top:-4%; width:64px; height:64px; transform:translate(-50%,-50%); border-radius:50%;
+      display:none; align-items:center; justify-content:center; z-index:50; pointer-events:none;
+      background: radial-gradient(circle at 35% 28%, #4a3c86, #1a1438 78%); border:3px solid var(--accent);
+      box-shadow: 0 0 24px rgba(16,185,129,0.75), inset 0 -6px 14px rgba(0,0,0,0.55); font-size:1.5rem; color:#fff;
+    }
+    .shockwave { position:absolute; transform:translate(-50%,-50%); border-radius:50%; border:3px solid var(--accent); pointer-events:none; z-index:45; box-shadow:0 0 22px rgba(16,185,129,0.6); }
+    .shockwave.perfect { border-color: var(--gold); box-shadow:0 0 28px rgba(251,191,36,0.85); }
+    .shockwave.cpu { border-color: var(--accent-2); box-shadow:0 0 22px rgba(6,182,212,0.6); }
 
     /* ---------- Power meter ---------- */
     #control-zone { width: min(360px, 92%); display: flex; flex-direction: column; gap: 10px; align-items: center; }
@@ -256,9 +271,10 @@
     }
     #slammer:hover { filter: brightness(1.1); }
     #slammer:active { transform: scale(0.97); }
-    #slammer.charging { background: linear-gradient(135deg, var(--gold), #d97706); animation: chargepulse .5s infinite; }
+    #slammer.aim { background: linear-gradient(135deg, var(--accent-2), #0891b2); box-shadow:0 10px 26px rgba(6,182,212,0.45); animation: chargepulse .5s infinite; }
+    #slammer.power { background: linear-gradient(135deg, var(--gold), #d97706); box-shadow:0 10px 26px rgba(251,191,36,0.45); animation: chargepulse .4s infinite; }
     #slammer.waiting { background: var(--panel); color: var(--muted); cursor: default; box-shadow: none; }
-    @keyframes chargepulse { 0%,100%{ box-shadow: 0 10px 26px rgba(251,191,36,0.4);} 50%{ box-shadow: 0 10px 40px rgba(251,191,36,0.8);} }
+    @keyframes chargepulse { 0%,100%{ filter:brightness(1);} 50%{ filter:brightness(1.25);} }
 
     #restart-btn { display: none; width: min(360px, 92%); }
 
@@ -372,11 +388,13 @@
 
     <div id="scoreboard">
       <div class="pscore p1" id="p1-card">
+        <div class="fire">🔥</div>
         <div class="pname" id="p1-name">Player 1</div>
         <div class="pnum" id="p1-score">0</div>
       </div>
       <div class="vs">VS</div>
       <div class="pscore p2" id="p2-card">
+        <div class="fire">🔥</div>
         <div class="pname" id="p2-name">Player 2</div>
         <div class="pnum" id="p2-score">0</div>
       </div>
@@ -394,9 +412,10 @@
       </div>
 
       <div id="game-col">
-        <div id="stack-area">
-          <div id="stack-shadow"></div>
-          <div id="stack"></div>
+        <div id="arena">
+          <div id="pile"></div>
+          <div id="aim-line"></div>
+          <div id="slammer-disc">✦</div>
         </div>
 
         <div id="control-zone">
@@ -462,7 +481,7 @@
     const p1SideName = $('p1-side-name'), p2SideName = $('p2-side-name');
     const p1ScoreEl = $('p1-score'), p2ScoreEl = $('p2-score');
     const turnBanner = $('turn-banner');
-    const stackEl = $('stack');
+    const arenaEl = $('arena'), pileEl = $('pile'), aimLine = $('aim-line'), disc = $('slammer-disc');
     const slammerEl = $('slammer');
     const powerWrap = $('power-wrap'), powerNeedle = $('power-needle'), powerHint = $('power-hint');
     const restartBtn = $('restart-btn');
@@ -478,12 +497,11 @@
     let isAnimating = false;
     let pendingState = null;
 
-    // power meter state
-    let charging = false;
-    let powerValue = 0;
-    let powerDir = 1;
-    let powerRAF = null;
+    // aim + power input state
+    let phase = 'idle';   // idle | ready | aiming | power | resolving | waiting
     let myTurn = false;
+    let aimVal = 0.5, aimDir = 1, aimRAF = null;
+    let powerValue = 0, powerDir = 1, powerRAF = null;
 
     /* ===================== SOUND (WebAudio) ===================== */
     let audioCtx = null, soundOn = true;
@@ -682,12 +700,13 @@
       updatePlayerNames(data.players);
       if (data.state === 'waiting') {
         turnBanner.textContent = data.players.length < 2 ? 'Waiting for an opponent…' : 'Ready!';
-        setSlamMode('waiting');
+        setBtn('waiting');
       }
     });
 
     socket.on('gameStart', state => {
       isGameActive = true;
+      isAnimating = false; pendingState = null; stopInputs();
       hideGameOver();
       const me = state.players.find(p => p.id === socket.id);
       if (me) myPlayerNum = me.num;
@@ -705,27 +724,76 @@
     });
 
     socket.on('slamResult', result => {
-      const slammerName = result.slammer === 1 ? p1NameEl.textContent : p2NameEl.textContent;
-      sfx.slam();
-      shake(result.perfect ? 1.6 : (result.flippedCount > 0 ? 1 : 0.5));
-
-      const rect = stackEl.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
-
-      if (result.flippedCount > 0) {
-        const color = result.slammer === 1 ? ['#10b981', '#34d399', '#fff'] : ['#06b6d4', '#22d3ee', '#fff'];
-        burst(cx, cy, color, result.perfect ? 40 : 20, result.perfect ? 1.5 : 1);
-        floatNumber(cx, cy - 30, '+' + result.flippedCount, result.perfect ? '#fbbf24' : '#10b981');
-        if (result.perfect) { sfx.perfect(); toast('💥 PERFECT SLAM!'); burst(cx, cy, ['#fbbf24', '#fde047', '#fff'], 30, 1.8); }
-        else result.flippedPogs.forEach((_, i) => sfx.collect(i));
-        turnBanner.textContent = `${slammerName} slammed ${result.flippedCount}!`;
-        animateCollection(result.flippedPogs, result.slammer);
-      } else {
-        sfx.whiff();
-        turnBanner.textContent = `${slammerName} whiffed! 0 flipped.`;
-        floatNumber(cx, cy - 30, 'MISS', '#8b8ba7');
-      }
+      isAnimating = true;        // defer the gameStateUpdate that follows until the FX finish
+      showSlamFx(result);
     });
+
+    function rateSlam(r) {
+      if (r.flippedCount === 0) return { label: 'Whiff! 0 flipped', tier: 0 };
+      if (r.perfect && r.accuracy === 'bullseye') return { label: '💥 PERFECT BULLSEYE!', tier: 4 };
+      if (r.perfect) return { label: '⚡ PERFECT SLAM!', tier: 3 };
+      if (r.flippedCount >= 5) return { label: '🔥 HUGE SLAM!', tier: 3 };
+      if (r.accuracy === 'bullseye' && r.flippedCount >= 3) return { label: '🎯 Bullseye!', tier: 2 };
+      if (r.flippedCount >= 3) return { label: 'Nice slam!', tier: 2 };
+      return { label: 'Solid hit', tier: 1 };
+    }
+
+    function shockwave(result) {
+      const w = arenaEl.offsetWidth, h = arenaEl.offsetHeight;
+      const ring = document.createElement('div');
+      ring.className = 'shockwave' + (result.perfect ? ' perfect' : '') + (result.slammer === 2 ? ' cpu' : '');
+      ring.style.left = (result.impactX * w) + 'px'; ring.style.top = (h * 0.5) + 'px';
+      arenaEl.appendChild(ring);
+      const size = Math.max(40, result.blast * 2 * w);
+      ring.animate([{ width: '12px', height: '12px', opacity: 0.95 }, { width: size + 'px', height: size + 'px', opacity: 0 }], { duration: 520, easing: 'cubic-bezier(.2,.7,.3,1)' });
+      setTimeout(() => ring.remove(), 540);
+    }
+
+    function showSlamFx(result) {
+      const name = result.slammer === 1 ? p1NameEl.textContent : p2NameEl.textContent;
+      // drop the slammer disc onto the impact point (both players see where it landed)
+      disc.style.display = 'flex'; disc.style.left = (result.impactX * 100) + '%'; disc.style.top = '-4%';
+      const drop = disc.animate([{ top: '-4%' }, { top: '50%' }], { duration: 170, easing: 'cubic-bezier(.4,0,.85,1)', fill: 'forwards' });
+      setTimeout(() => {
+        sfx.slam(); shake(result.perfect ? 1.8 : (result.flippedCount > 0 ? 1.1 : 0.5));
+        shockwave(result);
+        const r = arenaEl.getBoundingClientRect();
+        const ix = r.left + result.impactX * r.width, iy = r.top + r.height * 0.5;
+        const rating = rateSlam(result);
+
+        result.flippedPogs.forEach(pd => {
+          const el = document.querySelector(`#pile .pog[data-id="${pd.id}"]`);
+          if (el) {
+            el.classList.remove('face-down'); el.classList.add('face-up');
+            if (!el.querySelector('.sym')) { const s = document.createElement('div'); s.className = 'sym'; s.textContent = pd.coin.symbol.toUpperCase(); el.appendChild(s); }
+            const base = el.style.transform;
+            el.animate([{ transform: base + ' scale(1)' }, { transform: base + ' scale(1.3)' }, { transform: base + ' scale(1)' }], { duration: 220 });
+          }
+        });
+
+        if (result.flippedCount > 0) {
+          const cols = result.slammer === 1 ? ['#10b981', '#34d399', '#fff'] : ['#06b6d4', '#22d3ee', '#fff'];
+          burst(ix, iy, cols, result.perfect ? 44 : 22, result.perfect ? 1.6 : 1);
+          floatNumber(ix, iy - 26, '+' + result.flippedCount, result.perfect ? '#fbbf24' : (result.slammer === 1 ? '#10b981' : '#06b6d4'));
+          if (rating.tier >= 3) { sfx.perfect(); burst(ix, iy, ['#fbbf24', '#fde047', '#fff'], 34, 1.9); }
+          else result.flippedPogs.forEach((_, i) => sfx.collect(i));
+          turnBanner.textContent = `${name}: ${rating.label}`; turnBanner.style.color = result.slammer === 1 ? 'var(--accent)' : 'var(--accent-2)';
+          if (rating.tier >= 2) toast(rating.label);
+          if (result.streak === 3) toast(`🔥 ${name} on fire — bigger blasts!`);
+          setTimeout(() => { disc.style.display = 'none'; drop.cancel(); }, 200);
+          setTimeout(() => animateCollection(result.flippedPogs, result.slammer), 240);
+        } else {
+          sfx.whiff(); turnBanner.textContent = `${name}: Whiff! 0 flipped`; turnBanner.style.color = 'var(--muted)';
+          floatNumber(ix, iy - 26, 'MISS', '#8b8ba7');
+          setTimeout(() => { disc.style.display = 'none'; drop.cancel(); finishAnim(); }, 380);
+        }
+      }, 180);
+    }
+
+    function finishAnim() {
+      isAnimating = false;
+      if (pendingState) { renderGameState(pendingState); pendingState = null; }
+    }
 
     socket.on('gameOver', data => {
       renderGameState(data.finalState);
@@ -733,69 +801,60 @@
       showGameOver(data);
     });
 
-    socket.on('playerLeft', () => { turnBanner.textContent = 'Opponent left the game.'; setSlamMode('waiting'); isGameActive = false; toast('Opponent disconnected'); });
+    socket.on('playerLeft', () => { turnBanner.textContent = 'Opponent left the game.'; setBtn('waiting'); isGameActive = false; toast('Opponent disconnected'); });
 
-    /* ===================== POWER METER & SLAM ===================== */
-    function setSlamMode(mode) {
-      // mode: 'ready' | 'waiting' | 'charging'
+    /* ===================== AIM + POWER SLAM ===================== */
+    function setBtn(mode) {
       slammerEl.className = '';
-      if (mode === 'ready') {
-        slammerEl.classList.remove('waiting');
-        slammerEl.textContent = 'SLAM!';
-        slammerEl.disabled = false;
-        powerHint.textContent = 'Tap SLAM to charge your throw';
-      } else if (mode === 'waiting') {
-        slammerEl.classList.add('waiting');
-        slammerEl.textContent = "Opponent's turn…";
-        slammerEl.disabled = true;
-        powerHint.textContent = '';
-        stopCharging();
-      } else if (mode === 'charging') {
-        slammerEl.classList.add('charging');
-        slammerEl.textContent = 'LOCK IT! 🎯';
-        powerHint.textContent = 'Tap again — aim for the gold PERFECT zone!';
-      }
+      if (mode === 'ready') { slammerEl.textContent = '🎯 AIM'; slammerEl.disabled = false; powerHint.textContent = 'Tap to start aiming'; }
+      else if (mode === 'aiming') { slammerEl.classList.add('aim'); slammerEl.textContent = 'LOCK AIM'; slammerEl.disabled = false; powerHint.textContent = 'Tap to drop your slammer on the pile'; }
+      else if (mode === 'power') { slammerEl.classList.add('power'); slammerEl.textContent = 'LOCK POWER'; slammerEl.disabled = false; powerHint.innerHTML = 'Stop the meter in the gold <b>PERFECT</b> zone!'; }
+      else if (mode === 'resolving') { slammerEl.textContent = '💥'; slammerEl.disabled = true; powerHint.textContent = ''; }
+      else if (mode === 'waiting') { slammerEl.classList.add('waiting'); slammerEl.textContent = "Opponent's turn…"; slammerEl.disabled = true; powerHint.textContent = ''; stopInputs(); }
     }
 
-    function startCharging() {
-      charging = true;
-      powerValue = 0; powerDir = 1;
-      powerWrap.classList.add('live');
-      setSlamMode('charging');
-      sfx.charge();
-      const step = () => {
-        powerValue += powerDir * 2.6;
-        if (powerValue >= 100) { powerValue = 100; powerDir = -1; }
-        if (powerValue <= 0) { powerValue = 0; powerDir = 1; }
-        powerNeedle.style.left = powerValue + '%';
-        powerRAF = requestAnimationFrame(step);
-      };
-      powerRAF = requestAnimationFrame(step);
-    }
-
-    function stopCharging() {
-      charging = false;
-      if (powerRAF) cancelAnimationFrame(powerRAF);
-      powerRAF = null;
+    function stopInputs() {
+      if (aimRAF) cancelAnimationFrame(aimRAF); aimRAF = null;
+      if (powerRAF) cancelAnimationFrame(powerRAF); powerRAF = null;
       powerWrap.classList.remove('live');
     }
 
-    function lockAndSlam() {
-      const power = Math.round(powerValue);
-      stopCharging();
-      slammerEl.classList.remove('charging');
-      slammerEl.textContent = '💥';
-      slammerEl.disabled = true;
-      myTurn = false;
-      socket.emit('slam', { roomId: currentRoomId, power });
+    function startAim() {
+      phase = 'aiming'; setBtn('aiming'); sfx.charge();
+      aimVal = 0.1; aimDir = 1;
+      aimLine.style.display = 'block'; disc.style.display = 'flex'; disc.style.top = '-4%';
+      const step = () => {
+        aimVal += aimDir * 0.0115;
+        if (aimVal >= 0.9) { aimVal = 0.9; aimDir = -1; } if (aimVal <= 0.1) { aimVal = 0.1; aimDir = 1; }
+        const pct = (aimVal * 100) + '%'; aimLine.style.left = pct; disc.style.left = pct;
+        aimRAF = requestAnimationFrame(step);
+      };
+      aimRAF = requestAnimationFrame(step);
+    }
+    function lockAim() {
+      if (aimRAF) cancelAnimationFrame(aimRAF); aimRAF = null;
+      phase = 'power'; setBtn('power'); sfx.charge();
+      powerValue = 0; powerDir = 1; powerWrap.classList.add('live');
+      const step = () => { powerValue += powerDir * 2.6; if (powerValue >= 100) { powerValue = 100; powerDir = -1; } if (powerValue <= 0) { powerValue = 0; powerDir = 1; } powerNeedle.style.left = powerValue + '%'; powerRAF = requestAnimationFrame(step); };
+      powerRAF = requestAnimationFrame(step);
+    }
+    function lockPower() {
+      if (powerRAF) cancelAnimationFrame(powerRAF); powerRAF = null; powerWrap.classList.remove('live');
+      aimLine.style.display = 'none';
+      const power = Math.round(powerValue), impactX = aimVal;
+      phase = 'resolving'; myTurn = false; setBtn('resolving');
+      // server is authoritative; it replies with slamResult (drives all the FX for both players)
+      socket.emit('slam', { roomId: currentRoomId, power, impactX });
     }
 
-    slammerEl.addEventListener('click', () => {
-      if (!myTurn || slammerEl.disabled) return;
-      ac();
-      if (!charging) startCharging();
-      else lockAndSlam();
-    });
+    function handleTap() {
+      if (!myTurn) return;
+      if (phase === 'ready') { ac(); startAim(); }
+      else if (phase === 'aiming') { ac(); lockAim(); }
+      else if (phase === 'power') { ac(); lockPower(); }
+    }
+    slammerEl.addEventListener('click', handleTap);
+    arenaEl.addEventListener('click', handleTap);
 
     restartBtn.addEventListener('click', () => { socket.emit('restartGame', currentRoomId); restartBtn.style.display = 'none'; });
     $('leave-btn').addEventListener('click', () => location.reload());
@@ -811,35 +870,40 @@
       p1ScoreEl.textContent = state.p1Score;
       p2ScoreEl.textContent = state.p2Score;
 
+      const streak = state.streak || { 1: 0, 2: 0 };
+      p1Card.classList.toggle('on-fire', streak[1] >= 3);
+      p2Card.classList.toggle('on-fire', streak[2] >= 3);
+
       const cur = state.players[state.turnIndex];
       p1Card.classList.toggle('active-turn', cur && cur.num === 1);
       p2Card.classList.toggle('active-turn', cur && cur.num === 2);
 
+      // reset the aim widgets between turns
+      disc.style.display = 'none'; aimLine.style.display = 'none';
+
       if (cur) {
         myTurn = (cur.num === myPlayerNum) && isGameActive;
         if (myTurn) {
-          turnBanner.textContent = '🎯 Your turn — SLAM!';
+          turnBanner.textContent = '🎯 Your turn — line up your slam!';
           turnBanner.style.color = 'var(--accent)';
-          setSlamMode('ready');
+          phase = 'ready'; setBtn('ready');
         } else {
           turnBanner.textContent = `${cur.name}'s turn`;
           turnBanner.style.color = 'var(--muted)';
-          setSlamMode('waiting');
+          phase = 'waiting'; setBtn('waiting');
         }
       }
 
-      renderStack(state.pogs);
+      renderPile(state.pogs);
       renderRow(p1Collected, state.p1Collected);
       renderRow(p2Collected, state.p2Collected);
       renderRow(p1Contributed, state.originalPogs.filter(p => p.owner === 1));
       renderRow(p2Contributed, state.originalPogs.filter(p => p.owner === 2));
     }
 
-    function renderStack(pogs) {
-      stackEl.innerHTML = '';
-      let offset = 6;
-      for (let i = 0; i < pogs.length; i++) {
-        const pog = pogs[i];
+    function renderPile(pogs) {
+      pileEl.innerHTML = '';
+      (pogs || []).forEach(pog => {
         const el = document.createElement('div');
         el.className = 'pog ' + (pog.faceUp ? 'face-up' : 'face-down') + ' r-' + (pog.coin.rarity || 'common');
         el.dataset.id = pog.id;
@@ -852,13 +916,13 @@
           sym.className = 'sym'; sym.textContent = pog.coin.symbol.toUpperCase();
           el.appendChild(sym);
         }
-        const rot = (pog.id * 137) % 24 - 12;
-        el.style.bottom = offset + 'px';
-        el.style.transform = `rotateZ(${rot}deg)`;
-        el.style.zIndex = i;
-        offset += 7;
-        stackEl.appendChild(el);
-      }
+        const rot = (pog.id * 137) % 30 - 15;
+        const nx = (pog.nx != null ? pog.nx : 0.5), ny = (pog.ny != null ? pog.ny : 0.5);
+        el.style.left = (nx * 100) + '%'; el.style.top = (ny * 100) + '%';
+        el.style.transform = `translate(-50%,-50%) rotate(${rot}deg)`;
+        el.style.zIndex = Math.round(ny * 100);
+        pileEl.appendChild(el);
+      });
     }
 
     function renderRow(container, list) {
@@ -872,14 +936,11 @@
       const tr = target.getBoundingClientRect();
       const tx = tr.left + tr.width / 2, ty = tr.top + tr.height / 2;
       let done = 0; const total = flippedPogs.length;
-      const finish = () => {
-        isAnimating = false;
-        if (pendingState) { renderGameState(pendingState); pendingState = null; }
-      };
+      const finish = finishAnim;
       if (total === 0) return finish();
 
       flippedPogs.forEach((pd, idx) => {
-        const src = document.querySelector(`.pog[data-id="${pd.id}"]`);
+        const src = document.querySelector(`#pile .pog[data-id="${pd.id}"]`);
         if (!src) { if (++done === total) finish(); return; }
         const rect = src.getBoundingClientRect();
         const fly = src.cloneNode(true);

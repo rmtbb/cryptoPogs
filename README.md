@@ -35,9 +35,10 @@ The full game (`server.js`) adds account-based play and live head-to-head matche
 
 ## 🎮 How to play
 
-1. **Ante up** — you and your opponent each toss 6 pogs into a shared stack of 12.
-2. **Charge & slam** — tap to start the power meter, tap again to lock it. The cleaner the slam, the more pogs flip.
-3. **Keep the spoils** — every pog that flips face-up is yours. Empty the stack with the higher score to win the loot.
+1. **Ante up** — you and your opponent each toss 6 pogs into a shared pile of 12.
+2. **Aim** — a line sweeps the pile; tap to drop your slammer *where the pogs are thickest*.
+3. **Power** — stop the meter in the gold **PERFECT** zone. Power sets your blast radius + strength.
+4. **Keep the spoils** — pogs caught in the blast flip face-up and you keep 'em. Chain good slams to go 🔥 **on fire** (bigger blasts). Empty the pile with the higher score to win the loot.
 
 | In-game | Victory |
 |---|---|
