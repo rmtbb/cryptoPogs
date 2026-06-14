@@ -199,46 +199,51 @@
 
     #game-col { display: flex; flex-direction: column; align-items: center; gap: 10px; }
 
-    /* ---------- Arena: a real (imperfect) vertical stack ---------- */
-    #arena { position: relative; width: 100%; max-width: 320px; height: 340px; margin: 6px auto 0; perspective: 850px; }
-    #arena::after { content:''; position:absolute; left:50%; bottom:8px; transform:translateX(-50%); width:62%; height:26px; border-radius:50%; background:radial-gradient(ellipse, rgba(0,0,0,0.55), transparent 70%); }
-    #pile { position:absolute; inset:0; transform-style:preserve-3d; }
+    /* ---------- Arena: pogs piled on a table; throw the slammer down ---------- */
+    #arena {
+      position: relative; width: 100%; max-width: 340px; height: 320px; margin: 6px auto 0;
+      border-radius: 18px; overflow: hidden;
+      background:
+        radial-gradient(120% 80% at 50% 30%, rgba(255,255,255,0.05), transparent 60%),
+        radial-gradient(70% 55% at 50% 62%, rgba(16,185,129,0.16), transparent 70%),
+        radial-gradient(100% 100% at 50% 100%, #14223a, #0e1428 70%);
+      border: 1px solid var(--panel-bd); box-shadow: inset 0 2px 30px rgba(0,0,0,0.5);
+    }
+    #arena::after { content:''; position:absolute; left:50%; top:52%; transform:translate(-50%,-50%); width:120px; height:54px; border-radius:50%; background:radial-gradient(ellipse, rgba(0,0,0,0.45), transparent 70%); }
+    #pile { position:absolute; inset:0; }
 
     .pog {
-      position: absolute; width: 64px; height: 64px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      background: radial-gradient(circle at 36% 28%, #322c58, #14112a 76%);
-      border: 3px solid rgba(255,255,255,0.16); box-shadow: 0 5px 13px rgba(0,0,0,0.55), inset 0 -4px 8px rgba(0,0,0,0.35);
-      transition: opacity .18s ease;
+      position: absolute; width: 70px; height: 70px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; will-change: transform;
+      background: radial-gradient(circle at 36% 26%, #3a3470, #100d22 80%);
+      border: 2px solid rgba(255,255,255,0.18);
+      box-shadow: 0 3px 0 #0c0a1d, 0 6px 0 #0a0816, 0 12px 18px rgba(0,0,0,0.6), inset 0 -5px 10px rgba(0,0,0,0.45), inset 0 3px 7px rgba(255,255,255,0.14);
     }
-    .pog img { width: 38px; height: 38px; border-radius: 50%; pointer-events:none; }
-    .pog .sym { position: absolute; bottom: -3px; font-size: 0.5rem; font-weight: 800; color:#fff; background: rgba(0,0,0,0.65); padding: 0 5px; border-radius: 999px; }
-    .pog.face-down img { filter: grayscale(0.45) brightness(0.6); }
+    .pog img { width: 42px; height: 42px; border-radius: 50%; pointer-events:none; }
+    .pog .sym { position: absolute; bottom: -1px; font-size: 0.52rem; font-weight: 800; color:#fff; background: rgba(0,0,0,0.7); padding: 0 6px; border-radius: 999px; }
+    .pog.face-down img { filter: grayscale(0.5) brightness(0.55) contrast(0.9); }
     .pog.face-down .sym { display: none; }
-    .pog .badge { position:absolute; top:-4px; right:-4px; font-size:0.5rem; font-weight:900; background:var(--gold); color:#3a2a00; border-radius:999px; padding:0 4px; box-shadow:0 0 8px rgba(251,191,36,0.8); }
-    .pog .sbadge { position:absolute; top:-6px; left:-6px; font-size:0.85rem; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.6)); z-index:2; }
+    .pog .badge { position:absolute; top:-3px; right:-3px; font-size:0.52rem; font-weight:900; background:var(--gold); color:#3a2a00; border-radius:999px; padding:0 4px; box-shadow:0 0 8px rgba(251,191,36,0.85); z-index:2; }
+    .pog .sbadge { position:absolute; top:-7px; left:-7px; font-size:0.9rem; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.7)); z-index:3; }
 
-    /* rarity rings */
-    .pog.r-common  { border-color: rgba(148,163,184,0.65); }
-    .pog.r-rare    { border-color: #38bdf8; box-shadow: 0 5px 13px rgba(0,0,0,0.55), 0 0 12px rgba(56,189,248,0.5); }
-    .pog.r-epic    { border-color: #c084fc; box-shadow: 0 5px 13px rgba(0,0,0,0.55), 0 0 15px rgba(192,132,252,0.65); }
-    .pog.r-legendary { border-color: var(--gold); box-shadow: 0 5px 13px rgba(0,0,0,0.55), 0 0 18px rgba(251,191,36,0.85); }
+    .pog.r-rare    { border-color: #38bdf8; }
+    .pog.r-epic    { border-color: #c084fc; }
+    .pog.r-legendary { border-color: var(--gold); }
     .pog.face-up.r-legendary { animation: legend 1.5s infinite; }
     @keyframes legend { 0%,100%{ filter: brightness(1);} 50%{ filter: brightness(1.3);} }
-    /* special pogs override the rarity ring so they're spottable even when overlapped */
-    .pog.sp-bomb { border-color:#f87171 !important; box-shadow:0 5px 13px rgba(0,0,0,.55), 0 0 16px rgba(239,68,68,0.75) !important; animation: bombpulse 1s infinite; }
-    @keyframes bombpulse { 0%,100%{ box-shadow:0 5px 13px rgba(0,0,0,.55), 0 0 12px rgba(239,68,68,0.6);} 50%{ box-shadow:0 5px 13px rgba(0,0,0,.55), 0 0 24px rgba(239,68,68,0.95);} }
-    .pog.sp-locked { border-color:#cbd5e1 !important; border-style:dashed !important; box-shadow:0 5px 13px rgba(0,0,0,.55), 0 0 10px rgba(203,213,225,0.45) !important; }
+    .pog.sp-bomb { border-color:#f87171; box-shadow:0 3px 0 #0c0a1d, 0 12px 18px rgba(0,0,0,0.6), 0 0 16px rgba(239,68,68,0.8); animation: bombpulse 1s infinite; }
+    @keyframes bombpulse { 0%,100%{ filter:brightness(1);} 50%{ filter:brightness(1.25);} }
+    .pog.sp-locked { border-color:#cbd5e1; border-style:dashed; }
 
-    /* horizontal aim line sweeps UP/DOWN the stack; slammer strikes in from the right */
-    #aim-line { position:absolute; left:2%; right:14%; height:3px; transform:translateY(-50%); display:none; z-index:60;
-      background: linear-gradient(90deg, transparent, var(--accent) 30%, var(--accent)); box-shadow: 0 0 12px var(--accent); }
-    #aim-line::after { content:''; position:absolute; right:-2px; top:50%; transform:translateY(-50%); width:0;height:0; border-top:7px solid transparent; border-bottom:7px solid transparent; border-right:10px solid var(--accent); }
+    /* the slammer (kini) hovers above and is thrown DOWN onto the pile */
+    #aim-line { position:absolute; top:2%; bottom:8%; width:3px; transform:translateX(-50%); display:none; z-index:60;
+      background: linear-gradient(var(--accent), rgba(16,185,129,0.05)); box-shadow: 0 0 12px var(--accent); }
+    #aim-line::after { content:''; position:absolute; bottom:0; left:50%; transform:translateX(-50%); width:18px; height:6px; border-radius:50%; background:radial-gradient(ellipse, rgba(16,185,129,0.6), transparent 70%); }
     #slammer-disc {
-      position:absolute; right:-2%; width:54px; height:54px; transform:translate(50%,-50%); border-radius:50%;
+      position:absolute; top:6%; left:50%; width:62px; height:62px; transform:translate(-50%,-50%); border-radius:50%;
       display:none; align-items:center; justify-content:center; z-index:70; pointer-events:none;
-      background: radial-gradient(circle at 35% 28%, #5a4aa0, #1a1438 78%); border:3px solid var(--accent);
-      box-shadow: 0 0 22px rgba(16,185,129,0.8), inset 0 -5px 12px rgba(0,0,0,0.55); font-size:1.3rem; color:#fff;
+      background: radial-gradient(circle at 35% 26%, #6a5ad0, #221a48 78%); border:3px solid #cbb6ff;
+      box-shadow: 0 0 24px rgba(124,58,237,0.85), 0 14px 18px rgba(0,0,0,0.6), inset 0 -6px 14px rgba(0,0,0,0.55), inset 0 4px 8px rgba(255,255,255,0.25); font-size:1.5rem; color:#fff;
     }
     .shockwave { position:absolute; transform:translate(-50%,-50%); border-radius:50%; border:3px solid var(--accent); pointer-events:none; z-index:55; box-shadow:0 0 22px rgba(16,185,129,0.6); }
     .shockwave.perfect { border-color: var(--gold); box-shadow:0 0 28px rgba(251,191,36,0.85); }
@@ -496,6 +501,7 @@
     let currentRoomId = "";
     let isAnimating = false;
     let pendingState = null;
+    let lastPogs = [];
 
     // aim + power input state
     let phase = 'idle';   // idle | ready | aiming | power | resolving | waiting
@@ -724,8 +730,8 @@
     });
 
     socket.on('slamResult', result => {
-      isAnimating = true;        // defer the gameStateUpdate that follows until the FX finish
-      showSlamFx(result);
+      isAnimating = true;        // defer the trailing gameStateUpdate until the FX finish
+      throwSlammer(() => { impactRing(result); showSlamFx(result); scatter(result); setTimeout(finishAnim, 460 + (result.flippedCount > 0 ? 640 : 220)); });
     });
 
     function rateSlam(r) {
@@ -738,57 +744,76 @@
       return { label: 'Solid hit', tier: 1 };
     }
 
-    function shockwave(result) {
-      const w = arenaEl.offsetWidth, h = arenaEl.offsetHeight;
+    // the slammer is thrown DOWN onto the pile (both players see it), then the
+    // stack scatters: face-ups fly to the collection, face-downs settle back.
+    function throwSlammer(onImpact) {
+      disc.textContent = '🥏'; disc.style.display = 'flex'; disc.style.left = '50%';
+      const drop = disc.animate(
+        [{ top: '6%', transform: 'translate(-50%,-50%) scale(1.18)' }, { top: '52%', transform: 'translate(-50%,-50%) scale(0.82)' }],
+        { duration: 180, easing: 'cubic-bezier(.5,0,.95,1)', fill: 'forwards' });
+      setTimeout(() => { onImpact(); setTimeout(() => { drop.cancel(); disc.style.display = 'none'; disc.style.top = '6%'; }, 260); }, 190);
+    }
+
+    function impactRing(result) {
       const ring = document.createElement('div');
       ring.className = 'shockwave' + (result.perfect ? ' perfect' : '') + (result.slammer === 2 ? ' cpu' : '');
-      ring.style.left = '50%'; ring.style.top = (result.impactY * h) + 'px';
-      arenaEl.appendChild(ring);
-      const size = Math.max(40, result.blast * 2.4 * h);
-      ring.animate([{ width: '12px', height: '12px', opacity: 0.95 }, { width: size + 'px', height: size + 'px', opacity: 0 }], { duration: 520, easing: 'cubic-bezier(.2,.7,.3,1)' });
-      setTimeout(() => ring.remove(), 540);
+      ring.style.left = '50%'; ring.style.top = '52%'; arenaEl.appendChild(ring);
+      const size = Math.max(70, 70 + result.flippedCount * 20);
+      ring.animate([{ width: '14px', height: '14px', opacity: 0.95 }, { width: size + 'px', height: size + 'px', opacity: 0 }], { duration: 500, easing: 'cubic-bezier(.2,.7,.3,1)' });
+      setTimeout(() => ring.remove(), 520);
+    }
+
+    function scatter(result) {
+      const flippedIds = new Set(result.flippedPogs.map(p => p.id));
+      const faceDown = lastPogs.filter(p => !flippedIds.has(p.id));
+      lastPogs.forEach(pog => {
+        const el = document.querySelector(`#pile .pog[data-id="${pog.id}"]`);
+        if (!el) return;
+        const faceUp = flippedIds.has(pog.id);
+        if (faceUp) {
+          el.classList.remove('face-down'); el.classList.add('face-up');
+          if (!el.querySelector('.sym')) { const s = document.createElement('div'); s.className = 'sym'; s.textContent = pog.coin.symbol.toUpperCase(); el.appendChild(s); }
+        }
+        const ang = Math.random() * Math.PI * 2;
+        const dist = faceUp ? (62 + Math.random() * 78) : (26 + Math.random() * 48);
+        const dx = Math.cos(ang) * dist, dy = Math.sin(ang) * dist * 0.72;
+        const spin = (Math.random() - 0.5) * 680, rot = (pog.rot || 0);
+        el.style.zIndex = 200 + (faceUp ? 50 : 0);
+        el.style.transition = 'transform .42s cubic-bezier(.15,.85,.3,1)';
+        el.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) rotate(${rot + spin}deg)`;
+        el.dataset.settle = `translate(-50%,-50%) rotate(${rot}deg)`;
+      });
+      setTimeout(() => {
+        animateCollection(result.flippedPogs, result.slammer);
+        faceDown.forEach(pog => {
+          const el = document.querySelector(`#pile .pog[data-id="${pog.id}"]`);
+          if (!el) return;
+          el.style.transition = 'transform .34s cubic-bezier(.3,.8,.3,1)';
+          el.style.transform = el.dataset.settle;
+        });
+      }, 440);
     }
 
     function showSlamFx(result) {
       const name = result.slammer === 1 ? p1NameEl.textContent : p2NameEl.textContent;
-      // slammer strikes in from the right at the chosen height (both players see it)
-      disc.style.display = 'flex'; disc.style.top = (result.impactY * 100) + '%';
-      const strike = disc.animate([{ right: '-2%' }, { right: '42%' }], { duration: 150, easing: 'cubic-bezier(.4,0,.9,1)', fill: 'forwards' });
-      setTimeout(() => {
-        sfx.slam(); shake(result.perfect ? 1.8 : (result.flippedCount > 0 ? 1.1 : 0.5));
-        shockwave(result);
-        const r = arenaEl.getBoundingClientRect();
-        const ix = r.left + r.width * 0.5, iy = r.top + result.impactY * r.height;
-        const rating = rateSlam(result);
-
-        result.flippedPogs.forEach(pd => {
-          const el = document.querySelector(`#pile .pog[data-id="${pd.id}"]`);
-          if (el) {
-            el.classList.remove('face-down'); el.classList.add('face-up');
-            if (!el.querySelector('.sym')) { const s = document.createElement('div'); s.className = 'sym'; s.textContent = pd.coin.symbol.toUpperCase(); el.appendChild(s); }
-            const base = el.style.transform;
-            el.animate([{ transform: base + ' scale(1)' }, { transform: base + ' scale(1.3)' }, { transform: base + ' scale(1)' }], { duration: 220 });
-          }
-        });
-
-        if (result.flippedCount > 0) {
-          const cols = result.slammer === 1 ? ['#10b981', '#34d399', '#fff'] : ['#06b6d4', '#22d3ee', '#fff'];
-          burst(ix, iy, cols, result.perfect ? 44 : 22, result.perfect ? 1.6 : 1);
-          floatNumber(ix, iy - 26, '+' + (result.points != null ? result.points : result.flippedCount) + (result.onFire ? ' 🔥' : ''), result.perfect ? '#fbbf24' : (result.slammer === 1 ? '#10b981' : '#06b6d4'), rating.tier >= 3);
-          if (result.bombTriggered) { toast('💣 BOMB CHAIN!'); burst(ix, iy, ['#ef4444', '#f59e0b', '#fff'], 38, 1.8); shake(1.6); }
-          if (rating.tier >= 3) { sfx.perfect(); burst(ix, iy, ['#fbbf24', '#fde047', '#fff'], 34, 1.9); }
-          else result.flippedPogs.forEach((_, i) => sfx.collect(i));
-          turnBanner.textContent = `${name}: ${rating.label}`; turnBanner.style.color = result.slammer === 1 ? 'var(--accent)' : 'var(--accent-2)';
-          if (rating.tier >= 2) toast(rating.label);
-          if (result.streak === 3) toast(`🔥 ${name} on fire — 1.5× points!`);
-          setTimeout(() => { disc.style.display = 'none'; disc.style.right = '-2%'; strike.cancel(); }, 220);
-          setTimeout(() => animateCollection(result.flippedPogs, result.slammer), 240);
-        } else {
-          sfx.whiff(); turnBanner.textContent = `${name}: Whiff! 0 flipped`; turnBanner.style.color = 'var(--muted)';
-          floatNumber(ix, iy - 26, 'MISS', '#8b8ba7');
-          setTimeout(() => { disc.style.display = 'none'; disc.style.right = '-2%'; strike.cancel(); finishAnim(); }, 380);
-        }
-      }, 160);
+      sfx.slam(); shake(result.perfect ? 1.8 : (result.flippedCount > 0 ? 1.1 : 0.5));
+      const r = arenaEl.getBoundingClientRect();
+      const ix = r.left + r.width * 0.5, iy = r.top + r.height * 0.52;
+      const rating = rateSlam(result);
+      if (result.flippedCount > 0) {
+        const cols = result.slammer === 1 ? ['#10b981', '#34d399', '#fff'] : ['#06b6d4', '#22d3ee', '#fff'];
+        burst(ix, iy, cols, result.perfect ? 46 : 24, result.perfect ? 1.7 : 1.1);
+        floatNumber(ix, iy - 26, '+' + (result.points != null ? result.points : result.flippedCount) + (result.onFire ? ' 🔥' : ''), result.perfect ? '#fbbf24' : (result.slammer === 1 ? '#10b981' : '#06b6d4'));
+        if (result.bombTriggered) { toast('💣 BOMB CHAIN!'); burst(ix, iy, ['#ef4444', '#f59e0b', '#fff'], 38, 1.8); shake(1.6); }
+        if (rating.tier >= 3) { sfx.perfect(); burst(ix, iy, ['#fbbf24', '#fde047', '#fff'], 34, 1.9); }
+        else result.flippedPogs.forEach((_, i) => sfx.collect(i));
+        turnBanner.textContent = `${name}: ${rating.label}`; turnBanner.style.color = result.slammer === 1 ? 'var(--accent)' : 'var(--accent-2)';
+        if (rating.tier >= 2) toast(rating.label);
+        if (result.streak === 3) toast(`🔥 ${name} on fire — 1.5× points!`);
+      } else {
+        sfx.whiff(); turnBanner.textContent = `${name}: Whiff! 0 flipped`; turnBanner.style.color = 'var(--muted)';
+        floatNumber(ix, iy - 26, 'MISS', '#8b8ba7');
+      }
     }
 
     function finishAnim() {
@@ -808,7 +833,7 @@
     function setBtn(mode) {
       slammerEl.className = '';
       if (mode === 'ready') { slammerEl.textContent = '🎯 AIM'; slammerEl.disabled = false; powerHint.textContent = 'Tap to start aiming'; }
-      else if (mode === 'aiming') { slammerEl.classList.add('aim'); slammerEl.textContent = 'LOCK HEIGHT'; slammerEl.disabled = false; powerHint.textContent = 'Tap to choose where to strike the stack'; }
+      else if (mode === 'aiming') { slammerEl.classList.add('aim'); slammerEl.textContent = 'LOCK AIM'; slammerEl.disabled = false; powerHint.textContent = 'Centre the slammer over the stack'; }
       else if (mode === 'power') { slammerEl.classList.add('power'); slammerEl.textContent = 'LOCK POWER'; slammerEl.disabled = false; powerHint.innerHTML = 'Stop the meter in the gold <b>PERFECT</b> zone!'; }
       else if (mode === 'resolving') { slammerEl.textContent = '💥'; slammerEl.disabled = true; powerHint.textContent = ''; }
       else if (mode === 'waiting') { slammerEl.classList.add('waiting'); slammerEl.textContent = "Opponent's turn…"; slammerEl.disabled = true; powerHint.textContent = ''; stopInputs(); }
@@ -822,12 +847,13 @@
 
     function startAim() {
       phase = 'aiming'; setBtn('aiming'); sfx.charge();
-      aimVal = 0.12; aimDir = 1;
-      aimLine.style.display = 'block'; disc.style.display = 'flex';
+      aimVal = 0.18; aimDir = 1;
+      disc.textContent = '🥏';
+      aimLine.style.display = 'block'; disc.style.display = 'flex'; disc.style.top = '6%';
       const step = () => {
-        aimVal += aimDir * 0.012;
-        if (aimVal >= 0.88) { aimVal = 0.88; aimDir = -1; } if (aimVal <= 0.12) { aimVal = 0.12; aimDir = 1; }
-        const pct = (aimVal * 100) + '%'; aimLine.style.top = pct; disc.style.top = pct;
+        aimVal += aimDir * 0.011;
+        if (aimVal >= 0.82) { aimVal = 0.82; aimDir = -1; } if (aimVal <= 0.18) { aimVal = 0.18; aimDir = 1; }
+        const pct = (aimVal * 100) + '%'; aimLine.style.left = pct; disc.style.left = pct;
         aimRAF = requestAnimationFrame(step);
       };
       aimRAF = requestAnimationFrame(step);
@@ -841,11 +867,11 @@
     }
     function lockPower() {
       if (powerRAF) cancelAnimationFrame(powerRAF); powerRAF = null; powerWrap.classList.remove('live');
-      aimLine.style.display = 'none';
-      const power = Math.round(powerValue), impactY = aimVal;
+      aimLine.style.display = 'none'; disc.style.display = 'none';
+      const power = Math.round(powerValue), acc = Math.max(0, Math.min(1, 1 - Math.abs(aimVal - 0.5) / 0.30));
       phase = 'resolving'; myTurn = false; setBtn('resolving');
-      // server is authoritative; it replies with slamResult (drives all the FX for both players)
-      socket.emit('slam', { roomId: currentRoomId, power, impactY });
+      // server is authoritative; it replies with slamResult (drives the FX for both players)
+      socket.emit('slam', { roomId: currentRoomId, power, acc });
     }
 
     function handleTap() {
@@ -868,6 +894,7 @@
     }
 
     function renderGameState(state) {
+      lastPogs = state.pogs || [];
       p1ScoreEl.textContent = state.p1Score;
       p2ScoreEl.textContent = state.p2Score;
 
