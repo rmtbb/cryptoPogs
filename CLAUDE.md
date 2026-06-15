@@ -81,9 +81,14 @@ rooms[roomId] = {
    adds reach and ×1.5 points. Flipped pogs go to the slammer's collection.
 6. Game ends when the pile is empty; higher points wins.
 
-The browser-only `demo.html` reimplements this client-side (no server) and adds the
-single-player gauntlet + unlockable slammers + special-pog/music/haptic polish. Keep the
-core throw constants in `performSlam` and demo's `doSlam` in sync.
+The browser-only `demo.html` reimplements this client-side (no server) and is the public,
+deployed surface. It adds single-player meta: a **Gauntlet** ladder (Rookie→Legend), endless
+**Slam Rush**, a seeded **Daily Challenge**, 5 unlockable **slammers**, a first-run coach, and
+full juice (procedural music, haptics, scatter FX). These are demo-only; online MP uses Classic.
+Keep the core throw constants in `performSlam` and demo's `doSlam` in sync.
+
+Both clients are **mobile-optimized**: `viewport-fit=cover` + safe-area insets, scrollable
+menus, and a `@media (max-width:600px)` pass that fits the core loop above the fold on small phones.
 
 ### Database Schema
 
